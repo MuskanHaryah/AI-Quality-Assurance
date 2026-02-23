@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from utils.logger import app_logger
 from utils.validators import sanitize_filename
@@ -78,6 +78,6 @@ def create_analysis_id() -> str:
     Returns:
         Unique string ID.
     """
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     short_uuid = uuid.uuid4().hex[:8]
     return f"{timestamp}_{short_uuid}"

@@ -1,0 +1,83 @@
+{
+  "model_name": "Logistic Regression (C=10)",
+  "accuracy": 0.84375,
+  "f1_score": 0.8424215628892506,
+  "precision": 0.8479508640514074,
+  "recall": 0.84375,
+  "cv_mean": 0.7443663297972507,
+  "cv_std": 0.0291768308746855,
+  "categories": [
+    "Functionality",
+    "Security",
+    "Reliability",
+    "Usability",
+    "Efficiency",
+    "Maintainability",
+    "Portability"
+  ],
+  "num_features": 8000,
+  "num_training_samples": 892,
+  "num_test_samples": 224,
+  "tfidf_params": {
+    "max_features": "5000",
+    "ngram_range": "(1, 2)",
+    "min_df": "2",
+    "max_df": "0.95",
+    "sublinear_tf": "True",
+    "strip_accents": "unicode",
+    "stop_words": "english"
+  },
+  "trained_at": "2026-02-22T15:26:22.994055",
+  "all_model_results": {
+    "Logistic Regression (C=1)": {
+      "accuracy": 0.8214285714285714,
+      "f1_score": 0.8223736776770947,
+      "cv_mean": 0.7533488167723308
+    },
+    "Logistic Regression (C=5)": {
+      "accuracy": 0.8392857142857143,
+      "f1_score": 0.8387574422993899,
+      "cv_mean": 0.7443537756575231
+    },
+    "Logistic Regression (C=10)": {
+      "accuracy": 0.84375,
+      "f1_score": 0.8424215628892506,
+      "cv_mean": 0.7443663297972507
+    },
+    "Linear SVM (C=0.5)": {
+      "accuracy": 0.8258928571428571,
+      "f1_score": 0.825857860261298,
+      "cv_mean": 0.7578118134454837
+    },
+    "Linear SVM (C=1)": {
+      "accuracy": 0.8303571428571429,
+      "f1_score": 0.8293498404618527,
+      "cv_mean": 0.7566944950097294
+    },
+    "Linear SVM (C=2)": {
+      "accuracy": 0.8303571428571429,
+      "f1_score": 0.8289266525386647,
+      "cv_mean": 0.7600778356663109
+    },
+    "Linear SVM (C=5)": {
+      "accuracy": 0.8214285714285714,
+      "f1_score": 0.8193151829248289,
+      "cv_mean": 0.7578243675852112
+    },
+    "Complement NB (a=0.1)": {
+      "accuracy": 0.8080357142857143,
+      "f1_score": 0.8066977483898217,
+      "cv_mean": 0.7353587345427155
+    },
+    "Complement NB (a=0.5)": {
+      "accuracy": 0.8035714285714286,
+      "f1_score": 0.797286608690151,
+      "cv_mean": 0.7476743456154666
+    },
+    "SGD Classifier": {
+      "accuracy": 0.8035714285714286,
+      "f1_score": 0.7916161375737023,
+      "cv_mean": 0.6793296089385474
+    }
+  }
+}

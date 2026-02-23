@@ -10,7 +10,7 @@ when omitted they open their own connection via db_connection().
 import json
 from typing import Any, Dict, List, Optional
 
-from database.db import db_connection
+from database.db import db_connection, get_connection
 from utils.logger import app_logger
 
 
@@ -218,3 +218,99 @@ def get_requirements_count(analysis_id: str) -> int:
     with db_connection() as conn:
         count = conn.execute(sql, (analysis_id,)).fetchone()[0]
     return count
+
+
+# ──────────────────────────────────────────────────────────────────────────── #
+# TRANSACTIONAL HELPERS                                                         #
+# ──────────────────────────────────────────────────────────────────────────── #
+
+def delete_analysis(analysis_id: str) -> bool:
+    """
+    Delete an existing analysis and its requirements (CASCADE).
+    Used before re-analysis to avoid PK violations.
+    """
+    with db_connection() as conn:
+        conn.execute("DELETE FROM requirements WHERE analysis_id = ?", (analysis_id,))
+        conn.execute("DELETE FROM analyses WHERE id = ?", (analysis_id,))
+    app_logger.info(f"Deleted previous analysis: {analysis_id}")
+    return True
+
+
+def save_full_analysis(
+    analysis: Dict[str, Any],
+    requirements: List[Dict[str, Any]],
+    upload_status: str = "completed",
+) -> bool:
+    """
+    Atomically save analysis + requirements + update upload status
+    in a single database transaction.  If any step fails the entire
+    operation is rolled back.
+
+    Args:
+        analysis:       Dict with keys matching the analyses table.
+        requirements:   List of classified requirement dicts.
+        upload_status:  Status to set on the parent upload record.
+
+    Returns:
+        True on success.
+    """
+    analysis_id = analysis["id"]
+    upload_id = analysis["upload_id"]
+
+    analysis_sql = """
+        INSERT INTO analyses (
+            id, upload_id, total_requirements, overall_score, risk_level,
+            categories_present, categories_missing,
+            category_scores_json, recommendations_json, gap_analysis_json
+        )
+        VALUES (
+            :id, :upload_id, :total_requirements, :overall_score, :risk_level,
+            :categories_present, :categories_missing,
+            :category_scores_json, :recommendations_json, :gap_analysis_json
+        )
+    """
+    req_sql = """
+        INSERT INTO requirements (analysis_id, requirement_text, category, confidence,
+                                  keyword_strength, source_index)
+        VALUES (:analysis_id, :requirement_text, :category, :confidence,
+                :keyword_strength, :source_index)
+    """
+    status_sql = "UPDATE uploads SET status = ? WHERE id = ?"
+
+    req_rows = [
+        {
+            "analysis_id":      analysis_id,
+            "requirement_text": r.get("text", ""),
+            "category":         r.get("category", "Unknown"),
+            "confidence":       r.get("confidence", 0.0),
+            "keyword_strength": r.get("keyword_strength", None),
+            "source_index":     r.get("source_index", r.get("index", None)),
+        }
+        for r in requirements
+    ]
+
+    with db_connection() as conn:
+        # Remove previous analysis if re-analyzing
+        conn.execute("DELETE FROM requirements WHERE analysis_id = ?", (analysis_id,))
+        conn.execute("DELETE FROM analyses WHERE id = ?", (analysis_id,))
+
+        conn.execute(analysis_sql, {
+            "id":                    analysis_id,
+            "upload_id":             upload_id,
+            "total_requirements":    analysis.get("total_requirements", 0),
+            "overall_score":         analysis.get("overall_score", 0.0),
+            "risk_level":            analysis.get("risk_level", "Unknown"),
+            "categories_present":    json.dumps(analysis.get("categories_present", [])),
+            "categories_missing":    json.dumps(analysis.get("categories_missing", [])),
+            "category_scores_json":  json.dumps(analysis.get("category_scores", {})),
+            "recommendations_json":  json.dumps(analysis.get("recommendations", [])),
+            "gap_analysis_json":     json.dumps(analysis.get("gap_analysis", [])),
+        })
+        conn.executemany(req_sql, req_rows)
+        conn.execute(status_sql, (upload_status, upload_id))
+
+    app_logger.info(
+        f"Full analysis saved atomically: id={analysis_id} "
+        f"reqs={len(req_rows)} score={analysis.get('overall_score', 0):.2f}"
+    )
+    return True

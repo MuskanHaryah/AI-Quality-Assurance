@@ -27,6 +27,7 @@ from flask import Blueprint, jsonify, request, current_app
 
 from database.queries import save_upload
 from utils.file_handler import save_uploaded_file
+from utils.error_handler import handle_exception
 from utils.logger import app_logger
 from utils.validators import validate_file_size, validate_file_type
 
@@ -34,6 +35,7 @@ upload_bp = Blueprint("upload", __name__)
 
 
 @upload_bp.route("/upload", methods=["POST"])
+@handle_exception
 def upload():
     # ── 1. Check a file was included ──────────────────────────────────── #
     if "file" not in request.files:

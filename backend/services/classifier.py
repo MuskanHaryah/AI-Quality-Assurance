@@ -110,7 +110,8 @@ class RequirementClassifier:
 
     def classify_batch(self, texts: List[str]) -> List[Dict[str, Any]]:
         """
-        Classify a list of requirement strings efficiently.
+        Classify a list of requirement strings efficiently using batch
+        vectorization and prediction (single call to transform / predict).
 
         Args:
             texts: List of plain-text requirements.
@@ -118,12 +119,45 @@ class RequirementClassifier:
         Returns:
             List of classify() result dicts, one per input.
         """
-        results = []
+        if not texts:
+            return []
+
+        # Separate empty/whitespace texts from valid ones
+        valid_indices: List[int] = []
+        valid_texts: List[str] = []
+        results: List[Dict[str, Any]] = [None] * len(texts)  # type: ignore[list-item]
+
         for idx, text in enumerate(texts):
-            result = self.classify(text)
-            result["index"] = idx
-            results.append(result)
-        app_logger.info(f"Classified {len(results)} requirements")
+            if not text or not text.strip():
+                results[idx] = {
+                    "text": text, "category": "Unknown",
+                    "confidence": 0.0, "probabilities": {}, "index": idx,
+                }
+            else:
+                valid_indices.append(idx)
+                valid_texts.append(text.strip())
+
+        # Batch vectorize + predict in ONE call each (major speedup)
+        if valid_texts:
+            X = self.vectorizer.transform(valid_texts)
+            predictions = self.model.predict(X)
+            probas = self.model.predict_proba(X)
+
+            for i, orig_idx in enumerate(valid_indices):
+                confidence = round(float(max(probas[i])) * 100, 2)
+                probabilities = {
+                    cls: round(float(p) * 100, 2)
+                    for cls, p in zip(self.classes, probas[i])
+                }
+                results[orig_idx] = {
+                    "text": texts[orig_idx],
+                    "category": predictions[i],
+                    "confidence": confidence,
+                    "probabilities": probabilities,
+                    "index": orig_idx,
+                }
+
+        app_logger.info(f"Classified {len(texts)} requirements (batch)")
         return results
 
     def get_model_info(self) -> Dict[str, Any]:

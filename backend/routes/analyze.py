@@ -42,20 +42,21 @@ from flask import Blueprint, jsonify, request
 
 from database.queries import (
     get_upload,
-    save_analysis,
-    save_requirements,
+    save_full_analysis,
     update_upload_status,
 )
 from services.classifier import classifier
 from services.document_processor import process_document
 from services.quality_scorer import build_full_report
 from services.requirement_extractor import extract_requirements
+from utils.error_handler import handle_exception
 from utils.logger import app_logger
 
 analyze_bp = Blueprint("analyze", __name__)
 
 
 @analyze_bp.route("/analyze", methods=["POST"])
+@handle_exception
 def analyze():
     start_time = time.time()
 
@@ -118,22 +119,24 @@ def analyze():
     # ── 6. Calculate quality scores ───────────────────────────────────────── #
     report = build_full_report(classified)
 
-    # ── 7. Persist to database ────────────────────────────────────────────── #
+    # ── 7. Persist to database (single atomic transaction) ───────────────── #
     try:
-        save_analysis({
-            "id":                  file_id,
-            "upload_id":           file_id,
-            "total_requirements":  report["total_requirements"],
-            "overall_score":       report["overall_score"],
-            "risk_level":          report["risk"]["level"],
-            "categories_present":  report["categories_present"],
-            "categories_missing":  report["categories_missing"],
-            "category_scores":     report["category_scores"],
-            "recommendations":     report["recommendations"],
-            "gap_analysis":        report["gap_analysis"],
-        })
-        save_requirements(file_id, classified)
-        update_upload_status(file_id, "completed")
+        save_full_analysis(
+            analysis={
+                "id":                  file_id,
+                "upload_id":           file_id,
+                "total_requirements":  report["total_requirements"],
+                "overall_score":       report["overall_score"],
+                "risk_level":          report["risk"]["level"],
+                "categories_present":  report["categories_present"],
+                "categories_missing":  report["categories_missing"],
+                "category_scores":     report["category_scores"],
+                "recommendations":     report["recommendations"],
+                "gap_analysis":        report["gap_analysis"],
+            },
+            requirements=classified,
+            upload_status="completed",
+        )
     except Exception as exc:
         app_logger.error(f"Database persist error: {exc}")
         update_upload_status(file_id, "error")

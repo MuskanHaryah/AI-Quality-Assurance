@@ -21,12 +21,14 @@ Response 200
 from flask import Blueprint, jsonify
 
 from database.queries import get_analysis, get_requirements, get_upload
+from utils.error_handler import handle_exception
 from utils.logger import app_logger
 
 report_bp = Blueprint("report", __name__)
 
 
 @report_bp.route("/report/<analysis_id>", methods=["GET"])
+@handle_exception
 def get_report(analysis_id):
     if not analysis_id or not analysis_id.strip():
         return jsonify({"success": False, "error": "analysis_id is required."}), 400

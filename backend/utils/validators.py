@@ -2,9 +2,26 @@ import os
 import re
 import unicodedata
 
-ALLOWED_EXTENSIONS = {"pdf", "docx"}
-MAX_FILE_SIZE_MB = 10
-MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+def _get_allowed_extensions() -> set:
+    try:
+        from config import Config
+        return Config.ALLOWED_EXTENSIONS
+    except Exception:
+        return {"pdf", "docx"}
+
+
+def _get_max_file_size() -> int:
+    try:
+        from config import Config
+        return Config.MAX_CONTENT_LENGTH
+    except Exception:
+        return 10 * 1024 * 1024
+
+
+ALLOWED_EXTENSIONS = _get_allowed_extensions()
+MAX_FILE_SIZE_BYTES = _get_max_file_size()
+MAX_FILE_SIZE_MB = MAX_FILE_SIZE_BYTES / (1024 * 1024)
 
 
 def validate_file_type(filename: str) -> bool:

@@ -46,4 +46,14 @@ def setup_logger(name: str, log_file: str = None, level: str = "DEBUG") -> loggi
 
 
 # Shared application-level logger used across modules
-app_logger = setup_logger("qualitymapai")
+def _init_app_logger() -> logging.Logger:
+    """Initialise the application logger with the configured log file."""
+    try:
+        from config import Config
+        return setup_logger("qualitymapai", log_file=Config.LOG_FILE, level=Config.LOG_LEVEL)
+    except Exception:
+        # Fallback: console-only logging if config is unavailable
+        return setup_logger("qualitymapai")
+
+
+app_logger = _init_app_logger()

@@ -21,12 +21,14 @@ Response 200
 from flask import Blueprint, jsonify, request
 
 from services.classifier import classifier
+from utils.error_handler import handle_exception
 from utils.logger import app_logger
 
 predict_bp = Blueprint("predict", __name__)
 
 
 @predict_bp.route("/predict", methods=["POST"])
+@handle_exception
 def predict():
     data = request.get_json(silent=True)
     if not data:

@@ -1,0 +1,36 @@
+QualityMapAI - Model Training Report
+==================================================
+Date: 2026-02-22 15:26
+Best Model: Logistic Regression (C=10)
+Accuracy: 0.8438
+F1 Score: 0.8424
+Dataset: 1116 requirements
+Training: 892 | Test: 224
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Efficiency       0.65      0.79      0.71        19
+  Functionality       0.93      0.94      0.94       116
+Maintainability       0.72      0.81      0.76        16
+    Portability       0.73      0.53      0.62        15
+    Reliability       0.80      0.71      0.75        17
+       Security       0.92      0.69      0.79        16
+      Usability       0.75      0.84      0.79        25
+
+       accuracy                           0.84       224
+      macro avg       0.79      0.76      0.77       224
+   weighted avg       0.85      0.84      0.84       224
+
+
+All Models:
+  Logistic Regression (C=1): acc=0.8214, f1=0.8224
+  Logistic Regression (C=5): acc=0.8393, f1=0.8388
+  Logistic Regression (C=10): acc=0.8438, f1=0.8424
+  Linear SVM (C=0.5): acc=0.8259, f1=0.8259
+  Linear SVM (C=1): acc=0.8304, f1=0.8293
+  Linear SVM (C=2): acc=0.8304, f1=0.8289
+  Linear SVM (C=5): acc=0.8214, f1=0.8193
+  Complement NB (a=0.1): acc=0.8080, f1=0.8067
+  Complement NB (a=0.5): acc=0.8036, f1=0.7973
+  SGD Classifier: acc=0.8036, f1=0.7916

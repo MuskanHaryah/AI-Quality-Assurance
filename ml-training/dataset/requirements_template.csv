@@ -1,0 +1,51 @@
+ID,Requirement_Text,ISO_Category,ISO_Sub_Category,Keywords,Context,Confidence
+1,User shall login using email and password,Functionality,Suitability,login email password authentication,User Authentication,High
+2,System shall validate email format before registration,Functionality,Accuracy,validate email format accuracy,Input Validation,High
+3,Application shall integrate with PayPal payment gateway,Functionality,Interoperability,integrate API PayPal payment,Payment Integration,High
+4,Password must be encrypted using AES-256 algorithm,Security,Security,encrypt AES-256 password secure,Data Security,High
+5,System shall implement two-factor authentication,Security,Security,authentication two-factor 2FA secure,User Authentication,High
+6,All API communication shall use HTTPS protocol,Security,Security,HTTPS SSL secure communication API,Data Transmission,High
+7,User passwords shall be hashed using bcrypt,Security,Security,password hash bcrypt secure,Password Security,High
+8,System shall respond within 2 seconds for all requests,Efficiency,Time_Behavior,respond time seconds performance,Response Time,High
+9,Application shall handle 1000 concurrent users,Efficiency,Resource_Utilization,concurrent users handle scalability,Scalability,High
+10,Page load time shall not exceed 3 seconds,Efficiency,Time_Behavior,load time seconds performance,Page Performance,High
+11,System shall use less than 100MB memory,Efficiency,Resource_Utilization,memory RAM resource usage,Memory Usage,High
+12,Database queries shall complete within 500 milliseconds,Efficiency,Time_Behavior,query time milliseconds performance,Database Performance,High
+13,System shall have 99.9% uptime availability,Reliability,Maturity,uptime availability reliable SLA,System Availability,High
+14,Application shall recover from crash within 1 minute,Reliability,Recoverability,recover crash failure restart,Fault Recovery,High
+15,System shall handle 5 simultaneous errors without crashing,Reliability,Fault_Tolerance,error fault tolerance handle,Error Handling,High
+16,System shall backup data every 24 hours automatically,Reliability,Recoverability,backup data recovery automatic,Data Backup,High
+17,Application shall maintain data integrity during power failure,Reliability,Fault_Tolerance,data integrity power failure,Data Integrity,High
+18,UI shall be intuitive for first-time users,Usability,Understandability,intuitive interface understandable user-friendly,User Experience,High
+19,User shall complete registration within 5 clicks,Usability,Operability,clicks registration simple easy,User Flow,High
+20,System shall provide clear and helpful error messages,Usability,Operability,error message helpful clear informative,Error Messages,High
+21,Interface shall support keyboard navigation,Usability,Operability,keyboard navigation accessibility,Accessibility,High
+22,Application design shall be visually appealing,Usability,Attractiveness,design appealing attractive aesthetic,Visual Design,Medium
+23,User shall learn basic features within 10 minutes,Usability,Learnability,learn training onboarding tutorial,User Onboarding,High
+24,Help documentation shall be easily accessible,Usability,Understandability,help documentation accessible support,User Support,High
+25,Code shall follow PEP-8 coding standards,Maintainability,Analyzability,code standards PEP-8 quality,Code Quality,High
+26,All functions shall have docstring documentation,Maintainability,Analyzability,documentation docstring comments,Code Documentation,High
+27,System shall use modular architecture design,Maintainability,Changeability,modular architecture extensible,System Architecture,High
+28,Code shall have minimum 80% test coverage,Maintainability,Testability,test coverage unit-test quality,Software Testing,High
+29,System shall allow easy addition of new features,Maintainability,Changeability,changeable extensible flexible,Extensibility,High
+30,Changes shall not break existing functionality,Maintainability,Stability,stable backward-compatible regression,Backward Compatibility,High
+31,Code complexity shall be kept minimal,Maintainability,Analyzability,complexity simple readable clean,Code Complexity,High
+32,System shall run on Windows Linux and macOS,Portability,Adaptability,platform Windows Linux macOS cross-platform,Cross-Platform,High
+33,Application shall work on Chrome Firefox and Edge browsers,Portability,Adaptability,browser Chrome Firefox Edge compatibility,Browser Compatibility,High
+34,System shall be installable via standard installer,Portability,Installability,install setup deployment installer,Installation,High
+35,Application shall coexist with antivirus software,Portability,Coexistence,coexist compatible antivirus,Software Compatibility,High
+36,System shall be deployable on cloud platforms,Portability,Adaptability,cloud deployment AWS Azure platform,Cloud Deployment,High
+37,Application shall run on mobile and desktop devices,Portability,Adaptability,mobile desktop responsive device,Device Compatibility,High
+38,System shall allow export of data in multiple formats,Functionality,Suitability,export data CSV JSON XML format,Data Export,High
+39,User shall be able to search using filters,Functionality,Suitability,search filter query functionality,Search Feature,High
+40,Application shall send email notifications automatically,Functionality,Suitability,email notification alert automatic,Notifications,High
+41,System shall log all user activities for audit,Security,Security,log audit trail activity monitoring,Audit Logging,High
+42,Access to admin panel shall require authentication,Security,Security,admin authentication authorization access,Access Control,High
+43,Session shall timeout after 30 minutes of inactivity,Security,Security,session timeout inactivity security,Session Management,High
+44,System shall detect and block SQL injection attempts,Security,Security,SQL injection security attack prevention,Security Protection,High
+45,Application shall validate all user inputs,Functionality,Accuracy,validate input sanitize security,Input Validation,High
+46,System shall calculate totals with 99.9% accuracy,Functionality,Accuracy,calculate accuracy precision computation,Calculation Accuracy,High
+47,Reports shall be generated within 10 seconds,Efficiency,Time_Behavior,report generate time performance,Report Generation,High
+48,System shall compress files before upload,Efficiency,Resource_Utilization,compress file size bandwidth,File Compression,High
+49,Application shall cache frequently accessed data,Efficiency,Resource_Utilization,cache performance optimization,Caching,High
+50,System shall handle network disconnection gracefully,Reliability,Fault_Tolerance,network disconnection offline error-handling,Network Resilience,High

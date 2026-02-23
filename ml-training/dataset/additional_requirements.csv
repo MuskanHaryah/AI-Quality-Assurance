@@ -1,0 +1,96 @@
+ID,Requirement_Text,ISO_Category,ISO_Sub_Category,Keywords,Confidence,Source
+1,"The system shall log all runtime exceptions with stack traces to a centralized logging service",Maintainability,Analyzability,log exception stack trace centralized,High,augmented
+2,"All source code modules shall include a header comment describing purpose and author and last modified date",Maintainability,Analyzability,source code header comment purpose author,High,augmented
+3,"The cyclomatic complexity of any single method shall not exceed 10",Maintainability,Analyzability,cyclomatic complexity method limit,High,augmented
+4,"The system shall enforce a maximum method length of 50 lines of code",Maintainability,Analyzability,method length lines code limit,High,augmented
+5,"All public APIs shall be documented with input parameters return types and example usage",Maintainability,Analyzability,API documented parameters return types,High,augmented
+6,"The codebase shall maintain a consistent naming convention across all modules and packages",Maintainability,Analyzability,naming convention consistent modules,High,augmented
+7,"Static code analysis tools shall report zero critical violations before each release",Maintainability,Analyzability,static code analysis violations release,High,augmented
+8,"The system shall provide structured log output in JSON format for machine-readable analysis",Maintainability,Analyzability,structured log JSON format analysis,High,augmented
+9,"Each module shall have a clearly defined interface with documented dependencies",Maintainability,Analyzability,module interface documented dependencies,High,augmented
+10,"The source code shall achieve a maintainability index score of at least 65 as measured by SonarQube",Maintainability,Analyzability,maintainability index score SonarQube,High,augmented
+11,"The system architecture shall follow the separation of concerns principle with distinct layers for presentation business logic and data access",Maintainability,Changeability,separation concerns layers architecture,High,augmented
+12,"Database schema changes shall be managed through version-controlled migration scripts",Maintainability,Changeability,database schema migration version-controlled,High,augmented
+13,"The system shall use dependency injection to decouple component dependencies",Maintainability,Changeability,dependency injection decouple components,High,augmented
+14,"Configuration values such as API keys and database URLs shall be externalized from source code into environment variables",Maintainability,Changeability,configuration externalized environment variables,High,augmented
+15,"The system shall support feature flags to enable or disable functionality without redeployment",Maintainability,Changeability,feature flags enable disable redeployment,High,augmented
+16,"All third-party library dependencies shall be managed through a package manager with pinned versions",Maintainability,Changeability,dependencies package manager pinned versions,High,augmented
+17,"The system shall allow replacement of the database layer without modifying business logic code",Maintainability,Changeability,database layer replacement business logic,High,augmented
+18,"UI components shall be decoupled from backend services through a well-defined API contract",Maintainability,Changeability,UI decoupled backend API contract,High,augmented
+19,"The system shall use an event-driven architecture to allow new event handlers to be added without modifying existing code",Maintainability,Changeability,event-driven architecture handlers existing code,High,augmented
+20,"All system configuration parameters shall be changeable without requiring a full application restart",Maintainability,Changeability,configuration changeable without restart,High,augmented
+21,"New payment gateway integrations shall be addable by implementing a standard interface without altering core payment logic",Maintainability,Changeability,payment gateway interface integration,High,augmented
+22,"The notification system shall support adding new delivery channels such as SMS or push notifications through plugin modules",Maintainability,Changeability,notification channels plugin modules,High,augmented
+23,"Localization resources shall be stored in external files allowing new languages to be added without code changes",Maintainability,Changeability,localization external files languages,High,augmented
+24,"Bug fixes applied to the system shall not introduce regression failures in previously working functionality",Maintainability,Stability,bug fixes regression failures functionality,High,augmented
+25,"The system shall maintain backward compatibility with its REST API for at least two major version releases",Maintainability,Stability,backward compatibility REST API versions,High,augmented
+26,"Software updates shall preserve all existing user data and configuration settings",Maintainability,Stability,updates preserve user data configuration,High,augmented
+27,"The system shall maintain stable interfaces for all external integrations during minor version updates",Maintainability,Stability,stable interfaces external integrations,High,augmented
+28,"Database schema migrations shall be backward compatible and shall not result in data loss",Maintainability,Stability,database migration backward compatible data loss,High,augmented
+29,"All modules shall have unit tests covering at least 80 percent of branch conditions",Maintainability,Testability,unit tests branch conditions coverage,High,augmented
+30,"The system shall provide a dedicated test environment that mirrors the production configuration",Maintainability,Testability,test environment mirrors production,High,augmented
+31,"All REST API endpoints shall be testable independently using automated integration tests",Maintainability,Testability,REST API endpoints automated integration tests,High,augmented
+32,"The system shall support mock objects and test doubles for all external service dependencies",Maintainability,Testability,mock objects test doubles dependencies,High,augmented
+33,"Automated regression tests shall be executed before each deployment and all tests must pass",Maintainability,Testability,regression tests deployment automated pass,High,augmented
+34,"The system shall generate code coverage reports after each test run with results accessible via a dashboard",Maintainability,Testability,code coverage reports dashboard test,High,augmented
+35,"Each microservice shall be independently deployable and testable without requiring other services to be running",Maintainability,Testability,microservice independently deployable testable,High,augmented
+36,"The system shall include performance benchmark tests that can be run to detect performance regressions",Maintainability,Testability,performance benchmark tests regressions,High,augmented
+37,"End-to-end test scenarios shall cover all critical user workflows including login checkout and account management",Maintainability,Testability,end-to-end test scenarios critical workflows,High,augmented
+38,"The continuous integration pipeline shall complete a full build and test cycle within 15 minutes",Maintainability,Testability,continuous integration pipeline build test,High,augmented
+39,"The system shall use semantic versioning to clearly communicate the nature of changes in each release",Maintainability,Changeability,semantic versioning changes release,High,augmented
+40,"All error codes returned by the system shall be documented in a developer reference guide",Maintainability,Analyzability,error codes documented developer reference,High,augmented
+41,"The system shall provide health check endpoints that report the status of all dependent services",Maintainability,Analyzability,health check endpoints dependent services,High,augmented
+42,"Technical debt items shall be tracked in the issue tracker and addressed within two sprint cycles",Maintainability,Changeability,technical debt tracked sprint cycles,High,augmented
+43,"The system shall separate business rules into a configurable rules engine allowing non-developers to modify business logic",Maintainability,Changeability,business rules configurable rules engine,High,augmented
+44,"All database queries shall be implemented using parameterized statements through an ORM layer",Maintainability,Changeability,database queries parameterized ORM layer,High,augmented
+45,"The system shall provide automated deployment scripts that can deploy to any environment with a single command",Maintainability,Changeability,automated deployment scripts single command,High,augmented
+46,"Code review shall be mandatory for all changes and at least one reviewer must approve before merging",Maintainability,Analyzability,code review mandatory reviewer approve,High,augmented
+47,"The system shall maintain a changelog documenting all changes bug fixes and new features for each release",Maintainability,Analyzability,changelog changes bug fixes features release,High,augmented
+48,"Shared utility functions shall be extracted into a common library to prevent code duplication across modules",Maintainability,Analyzability,shared utility common library code duplication,High,augmented
+49,"The system shall enforce a maximum file size of 500 lines per source file to improve readability",Maintainability,Analyzability,maximum file size lines readability,High,augmented
+50,"The architecture shall support horizontal scaling by ensuring that application components are stateless",Maintainability,Changeability,horizontal scaling stateless components,High,augmented
+51,"The system shall automatically failover to a secondary database server within 30 seconds of primary server failure",Reliability,Recoverability,failover secondary database server,High,augmented
+52,"The system shall implement circuit breaker patterns to prevent cascading failures across microservices",Reliability,Fault_Tolerance,circuit breaker cascading failures microservices,High,augmented
+53,"All critical transactions shall be wrapped in database transactions to ensure atomicity in case of failure",Reliability,Fault_Tolerance,transactions atomicity database failure,High,augmented
+54,"The system shall retry failed API calls to external services up to 3 times with exponential backoff",Reliability,Fault_Tolerance,retry failed API calls exponential backoff,High,augmented
+55,"The system shall perform automated health checks every 60 seconds and restart unresponsive services automatically",Reliability,Recoverability,health checks restart unresponsive services,High,augmented
+56,"User session data shall be persisted to allow seamless recovery after an unexpected server restart",Reliability,Recoverability,session data persisted recovery server restart,High,augmented
+57,"The system shall maintain a write-ahead log to ensure no committed transactions are lost during a crash",Reliability,Recoverability,write-ahead log committed transactions crash,High,augmented
+58,"Database replication shall be configured with at least one synchronous replica to prevent data loss",Reliability,Recoverability,database replication synchronous replica data loss,High,augmented
+59,"The system shall implement a dead letter queue for messages that fail processing after maximum retry attempts",Reliability,Fault_Tolerance,dead letter queue messages retry processing,High,augmented
+60,"The system shall detect and automatically resolve database deadlocks within 5 seconds",Reliability,Fault_Tolerance,detect deadlocks resolve database,High,augmented
+61,"The system shall achieve a mean time between failures of at least 720 hours under normal operating conditions",Reliability,Maturity,mean time between failures hours MTBF,High,augmented
+62,"The system shall achieve a mean time to recovery of less than 5 minutes for any single component failure",Reliability,Recoverability,mean time recovery minutes component failure MTTR,High,augmented
+63,"The system shall process all queued messages in order even after recovering from an unexpected shutdown",Reliability,Recoverability,queued messages order recovering shutdown,High,augmented
+64,"The system shall maintain data consistency across all replicas within 2 seconds under normal network conditions",Reliability,Fault_Tolerance,data consistency replicas seconds network,High,augmented
+65,"The system shall gracefully degrade non-critical features when system load exceeds 90 percent capacity",Reliability,Fault_Tolerance,gracefully degrade non-critical load capacity,High,augmented
+66,"File uploads shall be validated with checksum verification to ensure data integrity during transmission",Reliability,Fault_Tolerance,checksum verification data integrity transmission,High,augmented
+67,"The system shall send automated alerts to the operations team when error rates exceed 1 percent of total requests",Reliability,Maturity,automated alerts operations error rates requests,High,augmented
+68,"The system shall maintain an audit log of all state changes that can be used to reconstruct system state after failure",Reliability,Recoverability,audit log state changes reconstruct failure,High,augmented
+69,"The system shall support rolling deployments to ensure zero downtime during software updates",Reliability,Maturity,rolling deployments zero downtime updates,High,augmented
+70,"The system shall implement input validation at every integration point to prevent corrupt data from entering the pipeline",Reliability,Fault_Tolerance,input validation integration point corrupt data,High,augmented
+71,"The monitoring system shall track and report the error rate per API endpoint on a per-minute basis",Reliability,Maturity,monitoring error rate API endpoint per-minute,High,augmented
+72,"The system shall store incremental backups every 4 hours and full backups every 24 hours with 30-day retention",Reliability,Recoverability,incremental backups full backups retention,High,augmented
+73,"The system shall survive the loss of any single hardware node without interruption of service to users",Reliability,Fault_Tolerance,hardware node loss interruption service,High,augmented
+74,"The system shall validate data integrity between the primary and backup databases on a daily basis",Reliability,Maturity,validate data integrity primary backup databases,High,augmented
+75,"The system disaster recovery plan shall enable full system restoration within 4 hours of a catastrophic failure",Reliability,Recoverability,disaster recovery restoration catastrophic failure,High,augmented
+76,"The system shall continue serving read requests from cache when the primary database becomes temporarily unavailable",Reliability,Fault_Tolerance,serving read requests cache database unavailable,High,augmented
+77,"The system shall log all failed transactions with sufficient detail to allow manual replay after recovery",Reliability,Recoverability,log failed transactions replay recovery,High,augmented
+78,"The system shall implement rate limiting to maintain stable operation under unexpected traffic spikes",Reliability,Maturity,rate limiting stable operation traffic spikes,High,augmented
+79,"The system shall perform automated smoke tests after each deployment to verify core functionality is operational",Reliability,Maturity,smoke tests deployment verify core functionality,High,augmented
+80,"The system shall guarantee exactly-once processing semantics for financial transactions even during failover events",Reliability,Fault_Tolerance,exactly-once processing financial transactions failover,High,augmented
+81,"The system uptime shall not fall below 99.5 percent in any given calendar month",Reliability,Maturity,uptime percent calendar month availability,High,augmented
+82,"The system shall remain fully operational during peak usage hours without any unplanned outages",Reliability,Maturity,operational peak usage unplanned outages,High,augmented
+83,"The application shall automatically recover all in-progress user sessions after an unexpected server crash",Reliability,Recoverability,recover sessions server crash automatic,High,augmented
+84,"The system shall detect hardware failures and reroute traffic to healthy servers without manual intervention",Reliability,Fault_Tolerance,detect hardware failures reroute healthy servers,High,augmented
+85,"The database shall automatically repair corrupted indexes without requiring administrator intervention",Reliability,Recoverability,repair corrupted indexes database automatic,High,augmented
+86,"The system shall maintain a heartbeat mechanism between all clustered nodes to detect failures promptly",Reliability,Fault_Tolerance,heartbeat mechanism clustered nodes detect failures,High,augmented
+87,"The system shall guarantee that no confirmed order is lost even if the application crashes during processing",Reliability,Fault_Tolerance,guaranteed no order lost crash processing,High,augmented
+88,"The system reliability shall be measured by calculating the ratio of successful requests to total requests over 30 days",Reliability,Maturity,reliability ratio successful requests measured,High,augmented
+89,"The application shall gracefully shut down all active connections before restarting for scheduled maintenance",Reliability,Recoverability,gracefully shut down connections restarting maintenance,High,augmented
+90,"The system shall isolate faulty components so that a failure in one module does not bring down the entire system",Reliability,Fault_Tolerance,isolate faulty components failure module entire system,High,augmented
+91,"All data written to the primary storage shall be synchronously replicated to at least one standby replica for durability",Reliability,Fault_Tolerance,replicated standby replica durability synchronous,High,augmented
+92,"The system shall continue to accept new user registrations even when the email notification service is temporarily down",Reliability,Fault_Tolerance,continue accept registrations notification service down,High,augmented
+93,"The error rate of the production system shall not exceed 0.1 percent of all processed requests",Reliability,Maturity,error rate production processed requests percent,High,augmented
+94,"The system shall fully restore from the most recent backup within 2 hours in the event of total data loss",Reliability,Recoverability,restore backup data loss hours recovery,High,augmented
+95,"The system shall have no single point of failure in its architecture to ensure continuous availability",Reliability,Maturity,single point failure architecture continuous availability,High,augmented

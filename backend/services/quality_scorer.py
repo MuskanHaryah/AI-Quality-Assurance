@@ -13,8 +13,8 @@ the user uploads a Quality Plan (see quality_plan_analyzer.py).
 Functions
 ---------
 calculate_category_scores()    – Per-category requirement counts & coverage
-detect_domain()                – Identify the system domain from requirement text
-generate_recommendations()     – Domain-aware improvement suggestions
+detect_domain()                – Identify the system domain (Gemini + keyword fallback)
+generate_recommendations()     – Domain-aware improvement suggestions (Gemini-enhanced)
 generate_gap_analysis()        – Categories missing or insufficient
 build_full_report()            – One-shot helper combining everything
 """
@@ -23,6 +23,10 @@ from collections import Counter
 from typing import Any, Dict, List, Optional
 
 from utils.logger import app_logger
+from services.gemini_service import (
+    detect_domain_with_gemini,
+    generate_recommendations_with_gemini,
+)
 
 # --------------------------------------------------------------------------- #
 # ISO/IEC 9126 category weights  (used internally & by quality plan analyzer)   #
@@ -247,13 +251,45 @@ def detect_domain(
     Detect the software domain from requirement text and (optionally) the
     full document text.
 
+    Uses Gemini AI for smart detection when available, falls back to keyword matching.
+
     Returns:
         {
             "domain":      "Banking / Finance"  (or "General" if unclear),
             "confidence":  0.0 – 1.0,
             "critical_categories": { "Security": "critical", ... },
+            "method":      "gemini" | "keyword",  (optional, for debugging)
         }
     """
+    # Try Gemini first if available
+    if raw_text:
+        gemini_result = detect_domain_with_gemini(raw_text, classified_requirements)
+        if gemini_result:
+            domain = gemini_result.get("domain", "General")
+            confidence = gemini_result.get("confidence", 0.0)
+            
+            # Map Gemini's critical categories to our format
+            critical_list = gemini_result.get("critical_categories", [])
+            critical_cats = {cat: "critical" for cat in critical_list}
+            
+            # If Gemini didn't find critical cats, use our defaults
+            if not critical_cats and domain in DOMAIN_CRITICAL_CATEGORIES:
+                critical_cats = DOMAIN_CRITICAL_CATEGORIES[domain]
+            
+            app_logger.info(
+                f"Gemini detected domain: {domain} (confidence={confidence})"
+            )
+            return {
+                "domain": domain,
+                "confidence": confidence,
+                "critical_categories": critical_cats,
+                "method": "gemini",
+                "reasoning": gemini_result.get("reasoning", ""),
+            }
+    
+    # Fallback to keyword-based detection
+    app_logger.info("Using keyword-based domain detection (Gemini unavailable)")
+    
     # Combine all requirement text + raw text into one searchable blob
     text_parts = [r.get("text", "") for r in classified_requirements]
     if raw_text:
@@ -271,6 +307,7 @@ def detect_domain(
             "domain": "General",
             "confidence": 0.0,
             "critical_categories": {},
+            "method": "keyword",
         }
 
     best_domain = max(scores, key=scores.get)
@@ -282,6 +319,7 @@ def detect_domain(
         "domain":              best_domain,
         "confidence":          confidence,
         "critical_categories": DOMAIN_CRITICAL_CATEGORIES.get(best_domain, {}),
+        "method":              "keyword",
     }
 
 
@@ -292,6 +330,8 @@ def generate_recommendations(
     """
     Produce actionable, domain-aware, category-level recommendations.
 
+    Uses Gemini AI for enhanced suggestions when available, falls back to rule-based.
+
     The SRS analysis does NOT assign a quality score — it just highlights
     what is present, what is missing, and what matters most given the
     detected domain.
@@ -301,8 +341,36 @@ def generate_recommendations(
         domain_info:     Output of detect_domain() (optional).
 
     Returns:
-        List of recommendation dicts with keys: category, priority, message.
+        List of recommendation dicts with keys: category, priority, message/suggestion.
     """
+    # Build SRS summary for Gemini
+    srs_summary = {
+        "category_scores": category_scores,
+        "categories_present": [
+            cat for cat, data in category_scores.items() if data.get("count", 0) > 0
+        ],
+        "categories_missing": [
+            cat for cat, data in category_scores.items() if data.get("count", 0) == 0
+        ],
+    }
+    
+    # Try Gemini first if domain info available
+    if domain_info:
+        gemini_recs = generate_recommendations_with_gemini(srs_summary, domain_info)
+        if gemini_recs:
+            # Standardize key naming (Gemini uses "suggestion", we use "message")
+            for rec in gemini_recs:
+                if "suggestion" in rec and "message" not in rec:
+                    rec["message"] = rec["suggestion"]
+            
+            app_logger.info(
+                f"Gemini generated {len(gemini_recs)} AI-powered recommendations"
+            )
+            return gemini_recs
+    
+    # Fallback to rule-based recommendations
+    app_logger.info("Using rule-based recommendations (Gemini unavailable)")
+    
     recommendations: List[Dict[str, str]] = []
     domain = (domain_info or {}).get("domain", "General")
     critical_cats = (domain_info or {}).get("critical_categories", {})

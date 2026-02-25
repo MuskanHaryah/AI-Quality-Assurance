@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -8,6 +12,9 @@ class Config:
     DEBUG = True
     TESTING = False
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-prod")
+
+    # Google Gemini API
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", None)
 
     # File upload config
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB max file size

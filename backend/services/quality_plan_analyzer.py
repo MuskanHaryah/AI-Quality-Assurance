@@ -15,14 +15,14 @@ How it works
    - Achievable quality score (if the plan is fully executed)
    - Improvement suggestions for uncovered categories
 
-This is keyword/phrase-based matching — honest and appropriate for a
-semester project. No fake deep-learning magic.
+Uses Gemini AI for enhanced insights when available, with keyword-based fallback.
 """
 
 import re
 from typing import Any, Dict, List, Optional
 
 from utils.logger import app_logger
+from services.gemini_service import analyze_quality_plan_with_gemini
 
 
 # --------------------------------------------------------------------------- #
@@ -219,6 +219,41 @@ def analyze_quality_plan(
         overall_coverage, domain_match_info
     )
 
+    # ── 5b. Enhance with Gemini AI insights (if available) ──────────── #
+    srs_summary = {
+        "category_scores": srs_category_scores,
+        "categories_present": srs_categories_present,
+        "categories_missing": srs_categories_missing,
+    }
+    gemini_insights = analyze_quality_plan_with_gemini(
+        plan_text, srs_summary, srs_domain or {}
+    )
+    
+    if gemini_insights:
+        # Add Gemini-powered suggestions (mark them as AI-enhanced)
+        gemini_suggestions = gemini_insights.get("suggestions", [])
+        for suggestion in gemini_suggestions:
+            if isinstance(suggestion, str):
+                # Convert string to dict format
+                suggestions.append({
+                    "category": "General",
+                    "priority": "medium",
+                    "type": "ai_insight",
+                    "message": suggestion,
+                })
+            elif isinstance(suggestion, dict):
+                # Already in dict format
+                if "message" not in suggestion and "text" in suggestion:
+                    suggestion["message"] = suggestion["text"]
+                suggestion["type"] = "ai_insight"
+                suggestions.append(suggestion)
+        
+        # Use Gemini's strengths/gaps if available for better summary
+        if gemini_insights.get("strengths"):
+            app_logger.info(f"Gemini identified strengths: {gemini_insights['strengths']}")
+        if gemini_insights.get("gaps"):
+            app_logger.info(f"Gemini identified gaps: {gemini_insights['gaps']}")
+    
     # ── 6. Generate summary ──────────────────────────────────────────── #
     summary = _generate_summary(
         covered_count, len(ALL_CATEGORIES),

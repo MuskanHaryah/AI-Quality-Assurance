@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS analyses (
     category_scores_json TEXT,              -- JSON blob of per-category detail
     recommendations_json TEXT,              -- JSON array of recommendation dicts
     gap_analysis_json    TEXT,              -- JSON array of gap dicts
+    domain_json          TEXT,              -- JSON: {domain, confidence, critical_categories}
     created_at           TIMESTAMP NOT NULL
                          DEFAULT (datetime('now')),
     FOREIGN KEY (upload_id) REFERENCES uploads(id) ON DELETE CASCADE

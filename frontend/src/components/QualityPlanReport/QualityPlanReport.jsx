@@ -10,6 +10,7 @@ import {
   Collapse,
   IconButton,
   alpha,
+  Alert,
 } from '@mui/material';
 import { useState } from 'react';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -19,6 +20,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ShieldIcon from '@mui/icons-material/Shield';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { GlassCard, SectionHeader } from '../common/GlassCard';
 import { categoryColors } from '../../utils/helpers';
 import { PURPLE, TEAL } from '../../theme/theme';
@@ -48,9 +50,11 @@ export default function QualityPlanReport({ planData }) {
     category_coverage,
     suggestions,
     summary,
+    domain_match,
   } = planData;
 
   const strengthCfg = strengthConfig[plan_strength] || strengthConfig.Weak;
+  const domainMismatch = domain_match && !domain_match.matches;
 
   return (
     <Box>
@@ -59,6 +63,24 @@ export default function QualityPlanReport({ planData }) {
         subtitle="How well does your quality plan cover the SRS requirements?"
         chip={{ label: strengthCfg.label, color: plan_strength === 'Strong' ? 'success' : plan_strength === 'Moderate' ? 'warning' : 'error' }}
       />
+
+      {/* Domain Mismatch Warning */}
+      {domainMismatch && (
+        <Alert
+          severity="warning"
+          icon={<WarningAmberIcon />}
+          sx={{ mb: 3 }}
+        >
+          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            Domain Mismatch Detected
+          </Typography>
+          <Typography variant="body2">
+            This Quality Plan appears to be for a <strong>{domain_match.qp_domain}</strong> system,
+            but the SRS is for a <strong>{domain_match.srs_domain}</strong> system.
+            Please verify you&apos;ve uploaded the correct Quality Plan document.
+          </Typography>
+        </Alert>
+      )}
 
       {/* Top metrics row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

@@ -6,9 +6,10 @@ Analyze a Quality Plan document against an existing SRS analysis.
 How it works
 ------------
 1. Extract text from the uploaded Quality Plan (PDF/DOCX).
-2. For each ISO/IEC 9126 category that the SRS analysis identified,
+2. Detect the domain of the Quality Plan and check if it matches the SRS domain.
+3. For each ISO/IEC 9126 category that the SRS analysis identified,
    search the Quality Plan text for evidence that the plan addresses it.
-3. Calculate:
+4. Calculate:
    - Per-category coverage (covered / not covered + evidence snippets)
    - Overall coverage percentage
    - Achievable quality score (if the plan is fully executed)
@@ -19,7 +20,7 @@ semester project. No fake deep-learning magic.
 """
 
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from utils.logger import app_logger
 
@@ -105,6 +106,7 @@ def analyze_quality_plan(
     srs_category_scores: Dict[str, Any],
     srs_categories_present: List[str],
     srs_categories_missing: List[str],
+    srs_domain: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Analyze a quality plan document against an SRS analysis.
@@ -114,6 +116,7 @@ def analyze_quality_plan(
         srs_category_scores:    Category scores from the SRS analysis.
         srs_categories_present: Categories found in the SRS.
         srs_categories_missing: Categories missing from the SRS.
+        srs_domain:             Domain info from the SRS analysis (optional).
 
     Returns:
         {
@@ -123,12 +126,32 @@ def analyze_quality_plan(
             "plan_strength":      "Strong" | "Moderate" | "Weak",
             "suggestions":        [ {category, priority, message}, ... ],
             "summary":            str,
+            "domain_match":       { "matches": bool, "srs_domain": str, "qp_domain": str }
         }
     """
     if not plan_text or not plan_text.strip():
         return _empty_result("Quality plan document is empty or unreadable.")
 
     plan_text_lower = plan_text.lower()
+
+    # ── 0. Detect QP domain and check for mismatch ───────────────────── #
+    from services.quality_scorer import detect_domain  # import here to avoid circular import
+
+    qp_domain_info = detect_domain([], raw_text=plan_text)
+    qp_domain_name = qp_domain_info.get("domain", "General")
+    srs_domain_name = (srs_domain or {}).get("domain", "General")
+
+    # Check if domains match (or one is General which matches anything)
+    domains_match = (
+        qp_domain_name == srs_domain_name or
+        qp_domain_name == "General" or
+        srs_domain_name == "General"
+    )
+    domain_match_info = {
+        "matches":    domains_match,
+        "srs_domain": srs_domain_name,
+        "qp_domain":  qp_domain_name,
+    }
 
     # ── 1. Check each category for coverage evidence ─────────────────── #
     category_coverage: Dict[str, Any] = {}
@@ -192,19 +215,22 @@ def analyze_quality_plan(
 
     # ── 5. Generate improvement suggestions ──────────────────────────── #
     suggestions = _generate_suggestions(
-        category_coverage, srs_categories_present, srs_categories_missing, overall_coverage
+        category_coverage, srs_categories_present, srs_categories_missing,
+        overall_coverage, domain_match_info
     )
 
     # ── 6. Generate summary ──────────────────────────────────────────── #
     summary = _generate_summary(
         covered_count, len(ALL_CATEGORIES),
-        srs_categories_present, overall_coverage, achievable_quality, plan_strength
+        srs_categories_present, overall_coverage, achievable_quality, plan_strength,
+        domain_match_info
     )
 
     app_logger.info(
         f"Quality plan analyzed | coverage={overall_coverage:.1f}% | "
         f"achievable={achievable_quality:.1f}% | strength={plan_strength} | "
-        f"covered={covered_count}/{len(ALL_CATEGORIES)}"
+        f"covered={covered_count}/{len(ALL_CATEGORIES)} | "
+        f"domain_match={domains_match} (SRS={srs_domain_name}, QP={qp_domain_name})"
     )
 
     return {
@@ -214,6 +240,7 @@ def analyze_quality_plan(
         "plan_strength":      plan_strength,
         "suggestions":        suggestions,
         "summary":            summary,
+        "domain_match":       domain_match_info,
     }
 
 
@@ -263,9 +290,27 @@ def _generate_suggestions(
     srs_present: List[str],
     srs_missing: List[str],
     overall_coverage: float,
+    domain_match: Dict[str, Any],
 ) -> List[Dict[str, str]]:
     """Generate actionable improvement suggestions."""
     suggestions = []
+
+    # Domain mismatch warning (highest priority if domains don't match)
+    if not domain_match.get("matches", True):
+        srs_dom = domain_match.get("srs_domain", "unknown")
+        qp_dom = domain_match.get("qp_domain", "unknown")
+        suggestions.append({
+            "category": "Domain Mismatch",
+            "priority": "critical",
+            "type":     "domain_mismatch",
+            "message": (
+                f"WARNING: This Quality Plan appears to be for a \"{qp_dom}\" system, "
+                f"but the SRS is for a \"{srs_dom}\" system. "
+                f"Please verify you've uploaded the correct Quality Plan document "
+                f"that corresponds to this SRS. If this is intentional, ensure the "
+                f"testing activities are appropriate for the actual system domain."
+            ),
+        })
 
     # Critical: SRS categories that the plan doesn't cover
     for cat in srs_present:
@@ -340,9 +385,20 @@ def _generate_summary(
     covered: int, total: int,
     srs_present: List[str],
     coverage: float, achievable: float, strength: str,
+    domain_match: Dict[str, Any],
 ) -> str:
     """Generate a human-readable summary paragraph."""
     lines = []
+
+    # Domain mismatch warning at the top of summary
+    if not domain_match.get("matches", True):
+        srs_dom = domain_match.get("srs_domain", "unknown")
+        qp_dom = domain_match.get("qp_domain", "unknown")
+        lines.append(
+            f"⚠️ Domain Mismatch: The SRS is for a {srs_dom} system, but this "
+            f"Quality Plan appears to be for a {qp_dom} system. Please verify you've "
+            f"uploaded the correct document."
+        )
 
     lines.append(
         f"Your Quality Plan covers {covered} out of {total} ISO/IEC 9126 quality categories."

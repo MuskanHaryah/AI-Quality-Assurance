@@ -1,23 +1,31 @@
 """
 services/quality_scorer.py
 ===========================
-Calculate ISO/IEC 9126 quality scores from classified requirements.
+Summarise the ISO/IEC 9126 category distribution of classified requirements,
+detect the software domain, and generate domain-aware recommendations.
+
+**Important design decision** (Feb 2026):
+The SRS analysis does *not* produce a quality score. It only tells the user
+which quality categories are present or missing in the SRS and gives
+domain-specific suggestions.  Quality estimation is done separately when
+the user uploads a Quality Plan (see quality_plan_analyzer.py).
 
 Functions
 ---------
-calculate_category_scores()  – Per-category requirement counts & coverage
-calculate_overall_score()    – Weighted overall quality score (0–100)
-generate_recommendations()   – Actionable improvement suggestions
-build_full_report()          – Combine everything into one result dict
+calculate_category_scores()    – Per-category requirement counts & coverage
+detect_domain()                – Identify the system domain from requirement text
+generate_recommendations()     – Domain-aware improvement suggestions
+generate_gap_analysis()        – Categories missing or insufficient
+build_full_report()            – One-shot helper combining everything
 """
 
 from collections import Counter
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from utils.logger import app_logger
 
 # --------------------------------------------------------------------------- #
-# ISO/IEC 9126 category weights                                                 #
+# ISO/IEC 9126 category weights  (used internally & by quality plan analyzer)   #
 # (Must sum to 1.0)                                                             #
 # --------------------------------------------------------------------------- #
 CATEGORY_WEIGHTS: Dict[str, float] = {
@@ -43,13 +51,141 @@ MIN_RECOMMENDED = {
     "Portability":     1,
 }
 
-# Risk thresholds for the overall score
-RISK_LEVELS = [
-    (80, "Low",      "green"),
-    (60, "Medium",   "orange"),
-    (40, "High",     "red"),
-    (0,  "Critical", "darkred"),
-]
+# --------------------------------------------------------------------------- #
+# Domain detection                                                              #
+# --------------------------------------------------------------------------- #
+
+DOMAIN_KEYWORDS: Dict[str, List[str]] = {
+    "Banking / Finance": [
+        "bank", "financial", "transaction", "payment",
+        "ledger", "credit", "debit", "loan", "interest", "atm",
+        "deposit", "withdrawal", "currency", "fund",
+        "invoice", "billing", "fintech", "money transfer",
+        "mortgage", "forex", "stock", "trading", "wealth",
+    ],
+    "Healthcare": [
+        "patient", "medical", "health", "clinical", "diagnosis",
+        "hospital", "doctor", "prescription", "emr", "ehr", "hipaa",
+        "pharmacy", "lab result", "treatment", "nursing", "vital sign",
+    ],
+    "E-commerce": [
+        "shop", "cart", "product", "catalog", "order", "checkout",
+        "shipping", "inventory", "marketplace", "wishlist", "discount",
+        "coupon", "merchant", "storefront", "retail", "add to cart",
+    ],
+    "Education / LMS": [
+        "student", "course", "grade", "enroll", "curriculum",
+        "classroom", "teacher", "learning", "lms", "assessment",
+        "assignment", "lecture", "exam", "semester", "school",
+        "faculty", "syllabus", "attendance", "lesson", "quiz",
+    ],
+    "Library Management": [
+        "book", "borrow", "return book", "library", "patron",
+        "catalog", "isbn", "circulation", "fine", "overdue",
+        "reservation", "shelf", "member", "lending", "librarian",
+        "due date", "checkout", "renewal", "collection",
+    ],
+    "Government / Public Sector": [
+        "citizen", "regulation", "compliance", "public sector",
+        "federal", "government", "municipality", "permit", "license",
+        "voting", "tax", "census",
+    ],
+    "IoT / Embedded": [
+        "sensor", "device", "firmware", "embedded", "gateway",
+        "telemetry", "mqtt", "actuator", "iot", "microcontroller",
+    ],
+    "Telecom / Networking": [
+        "network", "bandwidth", "latency", "protocol", "telecom",
+        "subscriber", "5g", "lte", "voip", "router",
+    ],
+    "Hotel / Hospitality": [
+        "hotel", "reservation", "booking", "guest", "room",
+        "check-in", "check-out", "housekeeping", "reception",
+        "amenity", "hospitality", "concierge", "occupancy",
+    ],
+    "Restaurant / Food Service": [
+        "menu", "order", "table", "restaurant", "kitchen",
+        "waiter", "bill", "cuisine", "reservation", "dine",
+        "takeaway", "delivery", "chef", "dish",
+    ],
+    "HR / Payroll": [
+        "employee", "payroll", "salary", "leave", "attendance",
+        "recruitment", "onboarding", "performance review", "hr",
+        "benefits", "timesheet", "appraisal", "workforce",
+    ],
+    "Inventory / Warehouse": [
+        "warehouse", "stock", "sku", "goods", "shipment",
+        "supply chain", "dispatch", "receiving", "storage",
+        "reorder", "inbound", "outbound", "logistics",
+    ],
+}
+
+# Which ISO 9126 categories are *especially* critical for each domain
+DOMAIN_CRITICAL_CATEGORIES: Dict[str, Dict[str, str]] = {
+    "Banking / Finance": {
+        "Security":    "critical",
+        "Reliability": "critical",
+        "Functionality": "high",
+        "Efficiency":  "high",
+    },
+    "Healthcare": {
+        "Security":    "critical",
+        "Reliability": "critical",
+        "Usability":   "high",
+        "Functionality": "high",
+    },
+    "E-commerce": {
+        "Security":    "high",
+        "Usability":   "high",
+        "Efficiency":  "high",
+        "Portability": "high",
+    },
+    "Education / LMS": {
+        "Usability":   "critical",
+        "Functionality": "high",
+        "Portability": "high",
+    },
+    "Library Management": {
+        "Usability":   "critical",
+        "Reliability": "high",
+        "Maintainability": "high",
+    },
+    "Government / Public Sector": {
+        "Security":    "critical",
+        "Reliability": "critical",
+        "Usability":   "high",
+    },
+    "IoT / Embedded": {
+        "Reliability": "critical",
+        "Efficiency":  "critical",
+        "Security":    "high",
+    },
+    "Telecom / Networking": {
+        "Efficiency":  "critical",
+        "Reliability": "critical",
+        "Security":    "high",
+    },
+    "Hotel / Hospitality": {
+        "Usability":   "critical",
+        "Reliability": "high",
+        "Functionality": "high",
+    },
+    "Restaurant / Food Service": {
+        "Usability":   "critical",
+        "Efficiency":  "high",
+        "Reliability": "high",
+    },
+    "HR / Payroll": {
+        "Security":    "critical",
+        "Reliability": "high",
+        "Functionality": "high",
+    },
+    "Inventory / Warehouse": {
+        "Reliability": "critical",
+        "Efficiency":  "high",
+        "Functionality": "high",
+    },
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -103,128 +239,128 @@ def calculate_category_scores(classified_requirements: List[Dict[str, Any]]) -> 
     return scores
 
 
-def calculate_overall_score(
-    category_scores: Dict[str, Any],
+def detect_domain(
     classified_requirements: List[Dict[str, Any]],
-) -> float:
+    raw_text: Optional[str] = None,
+) -> Dict[str, Any]:
     """
-    Compute a weighted overall quality score (0–100).
-
-    The score rewards:
-    - Distribution across all 7 categories (coverage bonus)
-    - Average confidence of the ML predictions
-    - Meeting the minimum recommended count per category
-
-    Args:
-        category_scores:            Output of calculate_category_scores().
-        classified_requirements:    Raw classified list (for confidence data).
+    Detect the software domain from requirement text and (optionally) the
+    full document text.
 
     Returns:
-        Float in range 0–100.
+        {
+            "domain":      "Banking / Finance"  (or "General" if unclear),
+            "confidence":  0.0 – 1.0,
+            "critical_categories": { "Security": "critical", ... },
+        }
     """
-    if not classified_requirements:
-        return 0.0
+    # Combine all requirement text + raw text into one searchable blob
+    text_parts = [r.get("text", "") for r in classified_requirements]
+    if raw_text:
+        text_parts.append(raw_text)
+    blob = " ".join(text_parts).lower()
 
-    total = len(classified_requirements)
+    scores: Dict[str, int] = {}
+    for domain, keywords in DOMAIN_KEYWORDS.items():
+        hits = sum(1 for kw in keywords if kw in blob)
+        if hits > 0:
+            scores[domain] = hits
 
-    # --- Component 1: coverage score (40 points) ---
-    # Each category that has ≥ 1 requirement contributes its weight × 40
-    categories_present = sum(
-        1 for cat in ALL_CATEGORIES if category_scores.get(cat, {}).get("count", 0) > 0
-    )
-    coverage_score = (categories_present / len(ALL_CATEGORIES)) * 40
+    if not scores:
+        return {
+            "domain": "General",
+            "confidence": 0.0,
+            "critical_categories": {},
+        }
 
-    # --- Component 2: distribution balance (30 points) ---
-    # How evenly requirements are spread (penalise heavy skew)
-    counts = [category_scores.get(cat, {}).get("count", 0) for cat in ALL_CATEGORIES]
-    present_counts = [c for c in counts if c > 0]
-    if len(present_counts) > 1:
-        mean_c = sum(present_counts) / len(present_counts)
-        variance = sum((c - mean_c) ** 2 for c in present_counts) / len(present_counts)
-        # Max variance at any realistic dataset is normalised to penalise outliers
-        norm_std = (variance ** 0.5) / (mean_c + 1)
-        balance_score = max(0, 30 * (1 - min(norm_std, 1)))
-    else:
-        balance_score = 0
+    best_domain = max(scores, key=scores.get)
+    best_hits = scores[best_domain]
+    max_possible = len(DOMAIN_KEYWORDS.get(best_domain, []))
+    confidence = round(min(best_hits / max(max_possible * 0.4, 1), 1.0), 2)
 
-    # --- Component 3: average ML confidence (30 points) ---
-    confidences = [r.get("confidence", 0) for r in classified_requirements]
-    avg_confidence = sum(confidences) / len(confidences) if confidences else 0
-    confidence_score = (avg_confidence / 100) * 30
-
-    overall = round(coverage_score + balance_score + confidence_score, 2)
-    app_logger.info(
-        f"Overall score={overall:.2f} | "
-        f"coverage={coverage_score:.1f} balance={balance_score:.1f} confidence={confidence_score:.1f}"
-    )
-    return min(overall, 100.0)
-
-
-def get_risk_level(overall_score: float) -> Dict[str, str]:
-    """Return risk label and colour for the given score."""
-    for threshold, label, colour in RISK_LEVELS:
-        if overall_score >= threshold:
-            return {"level": label, "colour": colour}
-    return {"level": "Critical", "colour": "darkred"}
+    return {
+        "domain":              best_domain,
+        "confidence":          confidence,
+        "critical_categories": DOMAIN_CRITICAL_CATEGORIES.get(best_domain, {}),
+    }
 
 
 def generate_recommendations(
     category_scores: Dict[str, Any],
-    overall_score: float,
+    domain_info: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, str]]:
     """
-    Produce actionable, category-level recommendations.
+    Produce actionable, domain-aware, category-level recommendations.
+
+    The SRS analysis does NOT assign a quality score — it just highlights
+    what is present, what is missing, and what matters most given the
+    detected domain.
 
     Args:
         category_scores: Output of calculate_category_scores().
-        overall_score:   Computed overall score.
+        domain_info:     Output of detect_domain() (optional).
 
     Returns:
         List of recommendation dicts with keys: category, priority, message.
     """
-    recommendations = []
-    risk = get_risk_level(overall_score)
+    recommendations: List[Dict[str, str]] = []
+    domain = (domain_info or {}).get("domain", "General")
+    critical_cats = (domain_info or {}).get("critical_categories", {})
 
     for cat in ALL_CATEGORIES:
         data = category_scores.get(cat, {})
         count = data.get("count", 0)
         min_rec = data.get("min_recommended", 1)
+        domain_importance = critical_cats.get(cat)          # "critical" | "high" | None
 
         if count == 0:
+            # Determine priority based on domain
+            if domain_importance == "critical":
+                priority = "critical"
+                suffix = (
+                    f" This is *critical* for a {domain} system — "
+                    f"missing {cat.lower()} requirements is a serious risk."
+                )
+            elif domain_importance == "high":
+                priority = "high"
+                suffix = (
+                    f" For a {domain} system, {cat.lower()} is highly important."
+                )
+            else:
+                priority = "high"
+                suffix = ""
+
             recommendations.append({
                 "category": cat,
-                "priority": "high",
+                "priority": priority,
                 "message": (
-                    f"No {cat} requirements found. "
-                    f"Add at least {min_rec} requirement(s) covering {cat.lower()} aspects."
+                    f"No {cat} requirements found in the SRS. "
+                    f"Consider adding at least {min_rec} requirement(s) "
+                    f"covering {cat.lower()} aspects.{suffix}"
                 ),
             })
         elif count < min_rec:
+            priority = "high" if domain_importance in ("critical", "high") else "medium"
             recommendations.append({
                 "category": cat,
-                "priority": "medium",
+                "priority": priority,
                 "message": (
                     f"{cat} has only {count} requirement(s) — "
-                    f"minimum recommended is {min_rec}. "
+                    f"recommended minimum is {min_rec}. "
                     "Consider adding more coverage."
+                    + (
+                        f" Especially important for a {domain} system."
+                        if domain_importance
+                        else ""
+                    )
                 ),
             })
 
-    if overall_score < 60:
-        recommendations.insert(0, {
-            "category": "General",
-            "priority": "critical",
-            "message": (
-                f"Overall quality score is {overall_score:.1f}% ({risk['level']} risk). "
-                "Focus on increasing coverage across missing categories before proceeding."
-            ),
-        })
-
-    # Sort: critical → high → medium
+    # Sort: critical → high → medium → low
     priority_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
     recommendations.sort(key=lambda r: priority_order.get(r["priority"], 99))
 
-    app_logger.info(f"Generated {len(recommendations)} recommendations")
+    app_logger.info(f"Generated {len(recommendations)} recommendations (domain={domain})")
     return recommendations
 
 
@@ -263,19 +399,27 @@ def generate_gap_analysis(
     return gaps
 
 
-def build_full_report(classified_requirements: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_full_report(
+    classified_requirements: List[Dict[str, Any]],
+    raw_text: Optional[str] = None,
+) -> Dict[str, Any]:
     """
-    One-shot helper that builds the complete scoring report.
+    One-shot helper that builds the complete SRS summary report.
+
+    The report tells the user **what is present and what is missing** in the
+    SRS, detects the software domain, and generates domain-aware
+    recommendations.  It does NOT produce a quality score — that comes from
+    the Quality Plan comparison step.
 
     Args:
         classified_requirements: Output of classifier.classify_batch().
+        raw_text:                Full document text (optional, improves domain detection).
 
     Returns:
         {
             total_requirements,
             category_scores,
-            overall_score,
-            risk,
+            domain,                  ← NEW
             recommendations,
             gap_analysis,
             categories_present,
@@ -284,9 +428,8 @@ def build_full_report(classified_requirements: List[Dict[str, Any]]) -> Dict[str
     """
     total = len(classified_requirements)
     category_scores = calculate_category_scores(classified_requirements)
-    overall_score = calculate_overall_score(category_scores, classified_requirements)
-    risk = get_risk_level(overall_score)
-    recommendations = generate_recommendations(category_scores, overall_score)
+    domain_info = detect_domain(classified_requirements, raw_text)
+    recommendations = generate_recommendations(category_scores, domain_info)
     gap_analysis = generate_gap_analysis(category_scores)
 
     categories_present = [
@@ -294,11 +437,15 @@ def build_full_report(classified_requirements: List[Dict[str, Any]]) -> Dict[str
     ]
     categories_missing = [cat for cat in ALL_CATEGORIES if cat not in categories_present]
 
+    app_logger.info(
+        f"SRS summary built: {total} reqs, domain={domain_info['domain']}, "
+        f"present={len(categories_present)}/{len(ALL_CATEGORIES)}"
+    )
+
     return {
         "total_requirements":   total,
         "category_scores":      category_scores,
-        "overall_score":        overall_score,
-        "risk":                 risk,
+        "domain":               domain_info,
         "recommendations":      recommendations,
         "gap_analysis":         gap_analysis,
         "categories_present":   categories_present,

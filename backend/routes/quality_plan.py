@@ -99,8 +99,9 @@ def upload_and_analyze_quality_plan(analysis_id):
     srs_category_scores = analysis.get("category_scores_json", {})
     srs_categories_present = analysis.get("categories_present", [])
     srs_categories_missing = analysis.get("categories_missing", [])
+    srs_domain = analysis.get("domain_json", {})
 
-    # Ensure they're lists (may come as JSON strings from DB)
+    # Ensure they're lists/dicts (may come as JSON strings from DB)
     if isinstance(srs_categories_present, str):
         import json
         srs_categories_present = json.loads(srs_categories_present)
@@ -110,6 +111,9 @@ def upload_and_analyze_quality_plan(analysis_id):
     if isinstance(srs_category_scores, str):
         import json
         srs_category_scores = json.loads(srs_category_scores)
+    if isinstance(srs_domain, str):
+        import json
+        srs_domain = json.loads(srs_domain)
 
     # ── 6. Analyze the quality plan ──────────────────────────────────── #
     plan_result = analyze_quality_plan(
@@ -117,6 +121,7 @@ def upload_and_analyze_quality_plan(analysis_id):
         srs_category_scores=srs_category_scores,
         srs_categories_present=srs_categories_present,
         srs_categories_missing=srs_categories_missing,
+        srs_domain=srs_domain,
     )
 
     # ── 7. Save to database ──────────────────────────────────────────── #
@@ -156,6 +161,7 @@ def upload_and_analyze_quality_plan(analysis_id):
         "category_coverage":  plan_result["category_coverage"],
         "suggestions":        plan_result["suggestions"],
         "summary":            plan_result["summary"],
+        "domain_match":       plan_result.get("domain_match", {}),
         "processing_time_s":  elapsed,
     }), 200
 

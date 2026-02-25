@@ -106,11 +106,8 @@ class TestE2EWorkflow(unittest.TestCase):
         analysis = json.loads(resp.data)
         self.assertTrue(analysis["success"])
         self.assertGreater(analysis["total_requirements"], 0)
-        self.assertIsInstance(analysis["overall_score"], (int, float))
-        self.assertGreaterEqual(analysis["overall_score"], 0)
-        self.assertLessEqual(analysis["overall_score"], 100)
-        self.assertIn("level", analysis["risk"])
-        self.assertIn(analysis["risk"]["level"], ["Low", "Medium", "High", "Critical"])
+        self.assertIn("domain", analysis)
+        self.assertIn("domain", analysis["domain"])
         self.assertIsInstance(analysis["category_scores"], dict)
         self.assertIsInstance(analysis["requirements"], list)
         self.assertIsInstance(analysis["recommendations"], list)
@@ -134,8 +131,7 @@ class TestE2EWorkflow(unittest.TestCase):
         self.assertTrue(report["success"])
         self.assertEqual(report["analysis_id"], file_id)
         self.assertIn("summary", report)
-        self.assertIn("overall_score", report["summary"])
-        self.assertIn("risk", report["summary"])
+        self.assertIn("domain", report["summary"])
         self.assertIn("total_requirements", report["summary"])
         self.assertEqual(
             report["summary"]["total_requirements"],

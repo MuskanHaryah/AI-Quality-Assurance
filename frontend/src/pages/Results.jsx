@@ -17,17 +17,17 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import LanguageIcon from '@mui/icons-material/Language';
 import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
-import ScoreGauge from '../components/ScoreGauge/ScoreGauge';
 import CategoryChart from '../components/CategoryChart/CategoryChart';
 import RequirementsTable from '../components/RequirementsTable/RequirementsTable';
 import RecommendationCard, { GapAnalysisCard } from '../components/RecommendationCard/RecommendationCard';
 import QualityPlanUpload from '../components/QualityPlanUpload/QualityPlanUpload';
 import QualityPlanReport from '../components/QualityPlanReport/QualityPlanReport';
 import { getReport, uploadQualityPlan, getQualityPlan } from '../api/services';
-import { formatDate, riskColor, categoryColors } from '../utils/helpers';
+import { formatDate, categoryColors } from '../utils/helpers';
 import { PURPLE, TEAL } from '../theme/theme';
 
 export default function Results() {
@@ -51,12 +51,11 @@ export default function Results() {
       getReport(id)
         .then((data) => {
           setReport(data);
-          // Also check if a quality plan already exists
           getQualityPlan(id)
             .then((qp) => {
               if (qp?.has_plan) setQpResult(qp);
             })
-            .catch(() => { /* no plan yet — that's fine */ });
+            .catch(() => { /* no plan yet */ });
         })
         .catch((err) => setError(err.friendlyMessage || 'Failed to load report.'))
         .finally(() => setLoading(false));
@@ -93,6 +92,7 @@ export default function Results() {
   if (!report) return null;
 
   const { summary, category_scores, requirements, recommendations, gap_analysis, categories_present, categories_missing } = report;
+  const domain = summary?.domain || {};
 
   return (
     <Container maxWidth="lg">
@@ -109,7 +109,7 @@ export default function Results() {
           <Divider orientation="vertical" flexItem />
           <Stack>
             <Typography variant="h4" fontWeight={800}>
-              Analysis Report
+              SRS Summary
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
               <DescriptionIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
@@ -120,18 +120,46 @@ export default function Results() {
           </Stack>
         </Stack>
 
-        {/* Top Row: Score + Overview */}
+        {/* Top Row: Domain + Overview */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          {/* Score Card */}
+          {/* Domain Card */}
           <Grid size={{ xs: 12, md: 4 }}>
-            <GlassCard sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
-                Overall Quality Score
+            <GlassCard sx={{ textAlign: 'center', py: 4, height: '100%' }}>
+              <LanguageIcon sx={{ fontSize: 48, color: PURPLE, mb: 1 }} />
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                Detected Domain
               </Typography>
-              <ScoreGauge
-                score={summary?.overall_score ?? 0}
-                riskLevel={summary?.risk?.level ?? 'Low'}
-              />
+              <Typography variant="h5" fontWeight={800} color="text.primary">
+                {domain.domain || 'General'}
+              </Typography>
+              {domain.confidence > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  Confidence: {Math.round(domain.confidence * 100)}%
+                </Typography>
+              )}
+              {Object.keys(domain.critical_categories || {}).length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                    Critical for this domain:
+                  </Typography>
+                  <Stack direction="row" flexWrap="wrap" gap={0.5} justifyContent="center">
+                    {Object.entries(domain.critical_categories || {}).map(([cat, level]) => (
+                      <Chip
+                        key={cat}
+                        label={cat}
+                        size="small"
+                        sx={{
+                          fontSize: '0.65rem',
+                          height: 22,
+                          backgroundColor: alpha(level === 'critical' ? '#ef4444' : '#f59e0b', 0.1),
+                          color: level === 'critical' ? '#ef4444' : '#f59e0b',
+                          fontWeight: 600,
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
             </GlassCard>
           </Grid>
 
@@ -139,34 +167,17 @@ export default function Results() {
           <Grid size={{ xs: 12, md: 8 }}>
             <GlassCard sx={{ height: '100%' }}>
               <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                Summary
+                What&apos;s in the SRS
               </Typography>
               <Grid container spacing={2}>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <StatItem
-                    label="Requirements"
-                    value={summary?.total_requirements ?? 0}
-                  />
+                <Grid size={{ xs: 6, sm: 4 }}>
+                  <StatItem label="Requirements" value={summary?.total_requirements ?? 0} />
                 </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <StatItem
-                    label="Risk Level"
-                    value={summary?.risk?.level ?? '—'}
-                    chipColor={riskColor(summary?.risk?.level)}
-                  />
+                <Grid size={{ xs: 6, sm: 4 }}>
+                  <StatItem label="Categories Found" value={categories_present?.length ?? 0} total={7} />
                 </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <StatItem
-                    label="Categories Found"
-                    value={categories_present?.length ?? 0}
-                    total={7}
-                  />
-                </Grid>
-                <Grid size={{ xs: 6, sm: 3 }}>
-                  <StatItem
-                    label="Missing"
-                    value={categories_missing?.length ?? 0}
-                  />
+                <Grid size={{ xs: 6, sm: 4 }}>
+                  <StatItem label="Missing" value={categories_missing?.length ?? 0} />
                 </Grid>
               </Grid>
 
@@ -210,11 +221,11 @@ export default function Results() {
           </Grid>
         </Grid>
 
-        {/* Category Scores */}
+        {/* Category Distribution */}
         <GlassCard sx={{ mb: 4 }}>
           <SectionHeader
-            title="Category Scores"
-            subtitle="Quality distribution across ISO/IEC 9126 categories"
+            title="Category Distribution"
+            subtitle="How requirements map to ISO/IEC 9126 quality categories"
           />
           <CategoryChart categoryScores={category_scores} />
         </GlassCard>
@@ -233,7 +244,7 @@ export default function Results() {
           <Box sx={{ mb: 4 }}>
             <SectionHeader
               title="Recommendations"
-              subtitle="Actionable suggestions to improve your requirements"
+              subtitle="What to improve in your SRS based on the detected domain"
             />
             <Stack spacing={2}>
               {recommendations.map((rec, idx) => (
@@ -248,7 +259,7 @@ export default function Results() {
           <Box sx={{ mb: 4 }}>
             <SectionHeader
               title="Gap Analysis"
-              subtitle="Coverage gaps detected in your requirements"
+              subtitle="Quality categories missing or insufficiently covered in the SRS"
             />
             <Grid container spacing={2}>
               {gap_analysis.map((gap, idx) => (
@@ -264,30 +275,28 @@ export default function Results() {
 
         {/* ── Quality Plan Section ─────────────────────────────────── */}
         {qpResult ? (
-          /* Show quality plan results if we have them */
           <Box sx={{ mb: 4 }}>
             <QualityPlanReport planData={qpResult} />
           </Box>
         ) : (
-          /* Ask user if they want to check their quality plan */
           <Box sx={{ mb: 4 }}>
             {!showQPUpload ? (
               <GlassCard
                 sx={{
                   textAlign: 'center',
                   py: 5,
-                  background: 'linear-gradient(135deg, rgba(6,182,212,0.04), rgba(124,58,237,0.04))',
-                  border: `1px dashed rgba(124,58,237,0.3)`,
+                  background: 'linear-gradient(135deg, rgba(6,182,212,0.06), rgba(124,58,237,0.06))',
+                  border: '2px dashed rgba(124,58,237,0.35)',
                 }}
               >
                 <FactCheckIcon sx={{ fontSize: 48, color: TEAL, mb: 2 }} />
                 <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-                  Want to check your Quality Plan?
+                  Want to know your quality estimation?
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}>
-                  Upload your Quality Plan document and we&apos;ll analyze how well it covers
-                  the {summary?.total_requirements ?? 0} quality factors identified above.
-                  You&apos;ll see coverage scores, achievable quality, and improvement suggestions.
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 540, mx: 'auto' }}>
+                  Upload your Quality Plan document and we&apos;ll compare it against
+                  the quality categories identified above. You&apos;ll see how much
+                  quality your plan can achieve and what to improve.
                 </Typography>
                 <Button
                   variant="contained"
@@ -301,7 +310,7 @@ export default function Results() {
                     '&:hover': { background: `linear-gradient(135deg, ${PURPLE}, ${TEAL})` },
                   }}
                 >
-                  Yes, Check My Quality Plan
+                  Upload Quality Plan
                 </Button>
               </GlassCard>
             ) : (
@@ -343,20 +352,12 @@ export default function Results() {
 }
 
 /** Small stat display card */
-function StatItem({ label, value, chipColor, total }) {
+function StatItem({ label, value, total }) {
   return (
     <Box sx={{ textAlign: 'center' }}>
-      {chipColor ? (
-        <Chip
-          label={value}
-          color={chipColor}
-          sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5 }}
-        />
-      ) : (
-        <Typography variant="h4" fontWeight={800} color="text.primary">
-          {value}{total ? <Typography component="span" variant="h6" color="text.secondary">/{total}</Typography> : null}
-        </Typography>
-      )}
+      <Typography variant="h4" fontWeight={800} color="text.primary">
+        {value}{total ? <Typography component="span" variant="h6" color="text.secondary">/{total}</Typography> : null}
+      </Typography>
       <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
         {label}
       </Typography>

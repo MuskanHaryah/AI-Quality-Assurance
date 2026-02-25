@@ -77,9 +77,9 @@ def create_app():
                 "analysis_id":       r["id"],
                 "filename":          r.get("original_name") or r.get("filename"),
                 "file_type":         r.get("file_type"),
-                "overall_score":     r.get("overall_score", 0),
-                "risk_level":        r.get("risk_level", "Unknown"),
                 "total_requirements": r.get("total_requirements", 0),
+                "categories_present": r.get("categories_present", "[]"),
+                "categories_missing": r.get("categories_missing", "[]"),
                 "created_at":        r.get("created_at"),
             }
             for r in rows

@@ -132,7 +132,7 @@ def analyze():
         cls_result["source_index"]     = ext_data.get("source_index")
 
     # ── 6. Calculate quality scores ───────────────────────────────────────── #
-    report = build_full_report(classified)
+    report = build_full_report(classified, raw_text=raw_text)
 
     # ── 7. Persist to database (single atomic transaction) ───────────────── #
     try:
@@ -141,13 +141,14 @@ def analyze():
                 "id":                  file_id,
                 "upload_id":           file_id,
                 "total_requirements":  report["total_requirements"],
-                "overall_score":       report["overall_score"],
-                "risk_level":          report["risk"]["level"],
+                "overall_score":       0.0,            # score comes from Quality Plan, not SRS
+                "risk_level":          "N/A",
                 "categories_present":  report["categories_present"],
                 "categories_missing":  report["categories_missing"],
                 "category_scores":     report["category_scores"],
                 "recommendations":     report["recommendations"],
                 "gap_analysis":        report["gap_analysis"],
+                "domain":              report["domain"],
             },
             requirements=classified,
             upload_status="completed",
@@ -160,7 +161,7 @@ def analyze():
     elapsed = round(time.time() - start_time, 2)
     app_logger.info(
         f"Analysis complete: {report['total_requirements']} reqs, "
-        f"score={report['overall_score']:.2f}, time={elapsed}s"
+        f"domain={report['domain']['domain']}, time={elapsed}s"
     )
 
     # ── 8. Build and return response ──────────────────────────────────────── #
@@ -178,8 +179,7 @@ def analyze():
         "success":            True,
         "analysis_id":        file_id,
         "total_requirements": report["total_requirements"],
-        "overall_score":      report["overall_score"],
-        "risk":               report["risk"],
+        "domain":             report["domain"],
         "category_scores":    report["category_scores"],
         "requirements":       requirements_list,
         "recommendations":    report["recommendations"],

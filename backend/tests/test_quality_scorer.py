@@ -18,10 +18,9 @@ from services.quality_scorer import (
     CATEGORY_WEIGHTS,
     build_full_report,
     calculate_category_scores,
-    calculate_overall_score,
+    detect_domain,
     generate_gap_analysis,
     generate_recommendations,
-    get_risk_level,
 )
 
 
@@ -65,74 +64,80 @@ class TestCategoryScores(unittest.TestCase):
         self.assertFalse(scores["Security"]["meets_minimum"])  # needs 3
 
 
-class TestOverallScore(unittest.TestCase):
+class TestDomainDetection(unittest.TestCase):
 
-    def test_empty_returns_zero(self):
-        scores = calculate_category_scores([])
-        self.assertEqual(calculate_overall_score(scores, []), 0.0)
+    def test_banking_domain(self):
+        reqs = [
+            {"text": "The system shall process bank transactions securely.", "category": "Security", "confidence": 90},
+            {"text": "Credit must be updated after each payment.", "category": "Functionality", "confidence": 85},
+        ]
+        result = detect_domain(reqs)
+        self.assertEqual(result["domain"], "Banking / Finance")
+        self.assertGreater(result["confidence"], 0)
+        self.assertIn("Security", result["critical_categories"])
 
-    def test_score_range(self):
-        reqs = _make_classified(["Functionality"] * 3 + ["Security"] * 2)
-        scores = calculate_category_scores(reqs)
-        overall = calculate_overall_score(scores, reqs)
-        self.assertGreaterEqual(overall, 0.0)
-        self.assertLessEqual(overall, 100.0)
+    def test_healthcare_domain(self):
+        reqs = [
+            {"text": "The system shall store patient medical records.", "category": "Functionality", "confidence": 90},
+            {"text": "Clinical diagnosis data must be encrypted.", "category": "Security", "confidence": 85},
+        ]
+        result = detect_domain(reqs)
+        self.assertEqual(result["domain"], "Healthcare")
 
-    def test_more_categories_higher_score(self):
-        """Covering more categories should yield a higher coverage component."""
-        reqs_narrow = _make_classified(["Functionality"] * 7)
-        reqs_wide = _make_classified(ALL_CATEGORIES)
+    def test_library_management_domain(self):
+        reqs = [
+            {"text": "The system shall allow members to borrow books.", "category": "Functionality", "confidence": 90},
+            {"text": "Patron can search catalog by ISBN or title.", "category": "Usability", "confidence": 85},
+            {"text": "Overdue items shall generate fine notifications.", "category": "Functionality", "confidence": 88},
+        ]
+        result = detect_domain(reqs)
+        self.assertEqual(result["domain"], "Library Management")
+        self.assertIn("Usability", result["critical_categories"])
 
-        scores_narrow = calculate_category_scores(reqs_narrow)
-        scores_wide = calculate_category_scores(reqs_wide)
+    def test_general_domain_when_no_keywords(self):
+        reqs = [
+            {"text": "The system shall do something.", "category": "Functionality", "confidence": 80},
+        ]
+        result = detect_domain(reqs)
+        self.assertEqual(result["domain"], "General")
+        self.assertEqual(result["confidence"], 0.0)
 
-        overall_narrow = calculate_overall_score(scores_narrow, reqs_narrow)
-        overall_wide = calculate_overall_score(scores_wide, reqs_wide)
-        self.assertGreater(overall_wide, overall_narrow)
+    def test_domain_from_raw_text(self):
+        reqs = [{"text": "Requirement one", "category": "Functionality", "confidence": 80}]
+        raw = "This banking application handles credit card transactions and loan management."
+        result = detect_domain(reqs, raw_text=raw)
+        self.assertEqual(result["domain"], "Banking / Finance")
 
-    def test_capped_at_100(self):
-        reqs = _make_classified(ALL_CATEGORIES * 10)
-        for r in reqs:
-            r["confidence"] = 100.0
-        scores = calculate_category_scores(reqs)
-        overall = calculate_overall_score(scores, reqs)
-        self.assertLessEqual(overall, 100.0)
-
-
-class TestRiskLevel(unittest.TestCase):
-
-    def test_low_risk(self):
-        self.assertEqual(get_risk_level(85)["level"], "Low")
-
-    def test_medium_risk(self):
-        self.assertEqual(get_risk_level(65)["level"], "Medium")
-
-    def test_high_risk(self):
-        self.assertEqual(get_risk_level(45)["level"], "High")
-
-    def test_critical_risk(self):
-        self.assertEqual(get_risk_level(20)["level"], "Critical")
-
-    def test_boundary_80(self):
-        self.assertEqual(get_risk_level(80)["level"], "Low")
-
-    def test_colour_present(self):
-        result = get_risk_level(50)
-        self.assertIn("colour", result)
+    def test_critical_categories_present(self):
+        reqs = [
+            {"text": "Process financial transaction.", "category": "Functionality", "confidence": 80},
+            {"text": "Secure bank transfer access.", "category": "Security", "confidence": 80},
+        ]
+        result = detect_domain(reqs)
+        self.assertIn("Security", result["critical_categories"])
+        self.assertIn("Reliability", result["critical_categories"])
 
 
 class TestRecommendations(unittest.TestCase):
 
     def test_empty_has_recommendations(self):
         scores = calculate_category_scores([])
-        recs = generate_recommendations(scores, 0.0)
+        recs = generate_recommendations(scores)
         self.assertGreater(len(recs), 0)
 
-    def test_critical_general_recommendation(self):
-        scores = calculate_category_scores([])
-        recs = generate_recommendations(scores, 30.0)
-        priorities = [r["priority"] for r in recs]
-        self.assertIn("critical", priorities)
+    def test_domain_aware_recommendation(self):
+        """Banking domain with missing Security should get a critical recommendation."""
+        scores = calculate_category_scores(_make_classified(["Functionality"] * 5))
+        domain_info = {
+            "domain": "Banking / Finance",
+            "confidence": 0.8,
+            "critical_categories": {"Security": "critical", "Reliability": "critical"},
+        }
+        recs = generate_recommendations(scores, domain_info)
+        sec_recs = [r for r in recs if r["category"] == "Security"]
+        self.assertEqual(len(sec_recs), 1)
+        self.assertEqual(sec_recs[0]["priority"], "critical")
+        self.assertIn("Banking / Finance", sec_recs[0]["message"])
 
     def test_full_coverage_no_high_recommendations(self):
         reqs = _make_classified(
@@ -141,13 +146,18 @@ class TestRecommendations(unittest.TestCase):
             + ["Maintainability"] * 1 + ["Portability"] * 1
         )
         scores = calculate_category_scores(reqs)
-        recs = generate_recommendations(scores, 85.0)
+        recs = generate_recommendations(scores)
         high_recs = [r for r in recs if r["priority"] == "high"]
         self.assertEqual(len(high_recs), 0)
 
     def test_sorted_by_priority(self):
         scores = calculate_category_scores([])
-        recs = generate_recommendations(scores, 20.0)
+        domain_info = {
+            "domain": "Banking / Finance",
+            "confidence": 0.8,
+            "critical_categories": {"Security": "critical"},
+        }
+        recs = generate_recommendations(scores, domain_info)
         order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
         priorities = [order.get(r["priority"], 99) for r in recs]
         self.assertEqual(priorities, sorted(priorities))
@@ -187,18 +197,27 @@ class TestBuildFullReport(unittest.TestCase):
     def test_empty_input(self):
         report = build_full_report([])
         self.assertEqual(report["total_requirements"], 0)
-        self.assertEqual(report["overall_score"], 0.0)
         self.assertIsInstance(report["recommendations"], list)
+        self.assertIn("domain", report)
 
     def test_report_keys(self):
         reqs = _make_classified(["Functionality", "Security"])
         report = build_full_report(reqs)
         expected_keys = {
-            "total_requirements", "category_scores", "overall_score",
-            "risk", "recommendations", "gap_analysis",
+            "total_requirements", "category_scores", "domain",
+            "recommendations", "gap_analysis",
             "categories_present", "categories_missing",
         }
         self.assertTrue(expected_keys.issubset(report.keys()))
+        # overall_score and risk should NOT be in the new report
+        self.assertNotIn("overall_score", report)
+        self.assertNotIn("risk", report)
+
+    def test_domain_in_report(self):
+        reqs = _make_classified(["Functionality", "Security"])
+        report = build_full_report(reqs)
+        self.assertIn("domain", report["domain"])
+        self.assertIn("confidence", report["domain"])
 
     def test_categories_present_and_missing(self):
         reqs = _make_classified(["Functionality", "Security"])

@@ -1,21 +1,12 @@
 """
 routes/report.py
 ================
-GET /api/report/<analysis_id>  – Return a complete analysis report as JSON.
+GET /api/report/<analysis_id>  – Return an SRS analysis summary as JSON.
 
-Response 200
-------------
-  {
-    "success":             true,
-    "analysis_id":         "...",
-    "summary":             { overall_score, risk, total_requirements, … },
-    "category_scores":     { Functionality: {…}, … },
-    "requirements":        [ {id, text, category, confidence, …}, … ],
-    "recommendations":     [ {category, priority, message}, … ],
-    "gap_analysis":        [ {category, gap_type, shortage}, … ],
-    "categories_present":  […],
-    "categories_missing":  […]
-  }
+The report shows which ISO/IEC 9126 categories are present/missing,
+the detected domain, and domain-aware recommendations.
+It does NOT include a quality score — quality estimation is done
+via the Quality Plan comparison feature.
 """
 
 from flask import Blueprint, jsonify
@@ -62,11 +53,10 @@ def get_report(analysis_id):
         "success":            True,
         "analysis_id":        analysis_id,
         "summary": {
-            "overall_score":       analysis.get("overall_score", 0),
-            "risk":                {"level": analysis.get("risk_level", "Unknown")},
             "total_requirements":  analysis.get("total_requirements", 0),
             "categories_present":  analysis.get("categories_present", []),
             "categories_missing":  analysis.get("categories_missing", []),
+            "domain":              analysis.get("domain_json", {}),
             "created_at":          analysis.get("created_at"),
             "filename":            upload["original_name"] if upload else None,
             "file_type":           upload["file_type"] if upload else None,

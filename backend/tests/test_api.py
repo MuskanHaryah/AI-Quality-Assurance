@@ -229,7 +229,7 @@ class TestAnalyzeEndpoint(unittest.TestCase):
             analysis = json.loads(analyze_resp.data)
             self.assertTrue(analysis["success"])
             self.assertGreater(analysis["total_requirements"], 0)
-            self.assertIn("overall_score", analysis)
+            self.assertIn("domain", analysis)
             self.assertIn("category_scores", analysis)
             self.assertIn("recommendations", analysis)
 

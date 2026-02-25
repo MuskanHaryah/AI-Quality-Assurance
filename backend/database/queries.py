@@ -92,12 +92,14 @@ def save_analysis(analysis: Dict[str, Any]) -> bool:
         INSERT INTO analyses (
             id, upload_id, total_requirements, overall_score, risk_level,
             categories_present, categories_missing,
-            category_scores_json, recommendations_json, gap_analysis_json
+            category_scores_json, recommendations_json, gap_analysis_json,
+            domain_json
         )
         VALUES (
             :id, :upload_id, :total_requirements, :overall_score, :risk_level,
             :categories_present, :categories_missing,
-            :category_scores_json, :recommendations_json, :gap_analysis_json
+            :category_scores_json, :recommendations_json, :gap_analysis_json,
+            :domain_json
         )
     """
     with db_connection() as conn:
@@ -106,15 +108,16 @@ def save_analysis(analysis: Dict[str, Any]) -> bool:
             "upload_id":             analysis["upload_id"],
             "total_requirements":    analysis.get("total_requirements", 0),
             "overall_score":         analysis.get("overall_score", 0.0),
-            "risk_level":            analysis.get("risk_level", "Unknown"),
+            "risk_level":            analysis.get("risk_level", "N/A"),
             "categories_present":    json.dumps(analysis.get("categories_present", [])),
             "categories_missing":    json.dumps(analysis.get("categories_missing", [])),
             "category_scores_json":  json.dumps(analysis.get("category_scores", {})),
             "recommendations_json":  json.dumps(analysis.get("recommendations", [])),
             "gap_analysis_json":     json.dumps(analysis.get("gap_analysis", [])),
+            "domain_json":           json.dumps(analysis.get("domain", {})),
         })
     app_logger.info(
-        f"Analysis saved: id={analysis['id']} score={analysis.get('overall_score', 0):.2f}"
+        f"Analysis saved: id={analysis['id']} domain={analysis.get('domain', {}).get('domain', 'N/A')}"
     )
     return True
 
@@ -134,7 +137,8 @@ def get_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
     data = dict(row)
     # Deserialise JSON columns
     for col in ("categories_present", "categories_missing",
-                "category_scores_json", "recommendations_json", "gap_analysis_json"):
+                "category_scores_json", "recommendations_json", "gap_analysis_json",
+                "domain_json"):
         if data.get(col):
             try:
                 data[col] = json.loads(data[col])
@@ -261,12 +265,14 @@ def save_full_analysis(
         INSERT INTO analyses (
             id, upload_id, total_requirements, overall_score, risk_level,
             categories_present, categories_missing,
-            category_scores_json, recommendations_json, gap_analysis_json
+            category_scores_json, recommendations_json, gap_analysis_json,
+            domain_json
         )
         VALUES (
             :id, :upload_id, :total_requirements, :overall_score, :risk_level,
             :categories_present, :categories_missing,
-            :category_scores_json, :recommendations_json, :gap_analysis_json
+            :category_scores_json, :recommendations_json, :gap_analysis_json,
+            :domain_json
         )
     """
     req_sql = """
@@ -299,19 +305,20 @@ def save_full_analysis(
             "upload_id":             upload_id,
             "total_requirements":    analysis.get("total_requirements", 0),
             "overall_score":         analysis.get("overall_score", 0.0),
-            "risk_level":            analysis.get("risk_level", "Unknown"),
+            "risk_level":            analysis.get("risk_level", "N/A"),
             "categories_present":    json.dumps(analysis.get("categories_present", [])),
             "categories_missing":    json.dumps(analysis.get("categories_missing", [])),
             "category_scores_json":  json.dumps(analysis.get("category_scores", {})),
             "recommendations_json":  json.dumps(analysis.get("recommendations", [])),
             "gap_analysis_json":     json.dumps(analysis.get("gap_analysis", [])),
+            "domain_json":           json.dumps(analysis.get("domain", {})),
         })
         conn.executemany(req_sql, req_rows)
         conn.execute(status_sql, (upload_status, upload_id))
 
     app_logger.info(
         f"Full analysis saved atomically: id={analysis_id} "
-        f"reqs={len(req_rows)} score={analysis.get('overall_score', 0):.2f}"
+        f"reqs={len(req_rows)} domain={analysis.get('domain', {}).get('domain', 'N/A')}"
     )
     return True
 

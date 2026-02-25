@@ -52,11 +52,16 @@ export const formatFileSize = (bytes) => {
 
 /**
  * Format ISO date string for display.
+ * Handles SQLite datetime format ("YYYY-MM-DD HH:MM:SS").
  */
 export const formatDate = (isoStr) => {
   if (!isoStr) return '—';
   try {
-    return format(new Date(isoStr), 'MMM d, yyyy h:mm a');
+    let normalized = isoStr;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(normalized)) {
+      normalized = normalized.replace(' ', 'T') + 'Z';
+    }
+    return format(new Date(normalized), 'MMM d, yyyy h:mm a');
   } catch {
     return isoStr;
   }
@@ -64,11 +69,18 @@ export const formatDate = (isoStr) => {
 
 /**
  * "2 hours ago" style relative date.
+ * Handles SQLite datetime format ("YYYY-MM-DD HH:MM:SS") which lacks
+ * the ISO-8601 'T' separator and 'Z' suffix.
  */
 export const formatRelative = (isoStr) => {
   if (!isoStr) return '—';
   try {
-    return formatDistanceToNow(new Date(isoStr), { addSuffix: true });
+    // SQLite gives "2026-02-26 14:30:00" — convert to ISO-8601 for reliable parsing
+    let normalized = isoStr;
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(normalized)) {
+      normalized = normalized.replace(' ', 'T') + 'Z';
+    }
+    return formatDistanceToNow(new Date(normalized), { addSuffix: true });
   } catch {
     return isoStr;
   }

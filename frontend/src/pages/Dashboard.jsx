@@ -14,6 +14,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   alpha,
   IconButton,
   Tooltip,
@@ -22,13 +23,13 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import CategoryIcon from '@mui/icons-material/Category';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
 import { getRecentAnalyses, checkHealth } from '../api/services';
-import { formatRelative, riskHex } from '../utils/helpers';
+import { formatRelative } from '../utils/helpers';
 import { PURPLE, TEAL } from '../theme/theme';
 
 export default function Dashboard() {
@@ -37,6 +38,8 @@ export default function Dashboard() {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchData = async () => {
     setLoading(true);
@@ -69,15 +72,25 @@ export default function Dashboard() {
   // Summary stats
   const totalAnalyses = analyses.length;
   const totalRequirements = analyses.reduce((sum, a) => sum + (a.total_requirements || 0), 0);
-  const avgScore =
+
+  // Parse categories_present (stored as JSON string or array)
+  const parseCats = (raw) => {
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') {
+      try { return JSON.parse(raw); } catch { return []; }
+    }
+    return [];
+  };
+
+  const avgCategories =
     totalAnalyses > 0
-      ? (analyses.reduce((sum, a) => sum + (a.overall_score || 0), 0) / totalAnalyses).toFixed(1)
+      ? (analyses.reduce((sum, a) => sum + parseCats(a.categories_present).length, 0) / totalAnalyses).toFixed(1)
       : '—';
 
   const stats = [
     { label: 'Total Analyses', value: totalAnalyses, icon: <AssessmentIcon />, color: PURPLE },
     { label: 'Requirements Processed', value: totalRequirements, icon: <InsertDriveFileIcon />, color: TEAL },
-    { label: 'Average Score', value: avgScore, icon: <TrendingUpIcon />, color: '#10b981' },
+    { label: 'Avg Categories', value: `${avgCategories}/7`, icon: <CategoryIcon />, color: '#10b981' },
   ];
 
   return (
@@ -165,109 +178,133 @@ export default function Dashboard() {
         <GlassCard>
           <SectionHeader
             title="Recent Analyses"
-            subtitle={`${totalAnalyses} analysis${totalAnalyses !== 1 ? 'es' : ''} found`}
+            subtitle={`${totalAnalyses} ${totalAnalyses === 1 ? 'analysis' : 'analyses'} found`}
           />
 
           {analyses.length === 0 ? (
-            <Box sx={{ py: 6, textAlign: 'center' }}>
-              <UploadFileIcon sx={{ fontSize: 56, color: 'text.disabled', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No analyses yet
+            <Box sx={{ py: 8, textAlign: 'center' }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: '50%',
+                  background: alpha(PURPLE, 0.1),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 3,
+                }}
+              >
+                <UploadFileIcon sx={{ fontSize: 40, color: PURPLE }} />
+              </Box>
+              <Typography variant="h5" fontWeight={700} gutterBottom>
+                Welcome to QualityMapAI
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Upload a requirements document to get started.
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 1, maxWidth: 420, mx: 'auto' }}>
+                Upload your SRS document to analyze requirements quality.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: 420, mx: 'auto' }}>
+                We&apos;ll classify requirements into ISO/IEC 9126 categories, detect your system domain, and provide tailored recommendations.
               </Typography>
               <Button
                 variant="contained"
+                size="large"
                 startIcon={<UploadFileIcon />}
                 onClick={() => navigate('/upload')}
+                sx={{ px: 4 }}
               >
-                Upload Document
+                Upload Your First Document
               </Button>
             </Box>
           ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="right">Score</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Risk</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="right">Reqs</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>When</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }} align="center">Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {analyses.map((a) => (
-                    <TableRow
-                      key={a.analysis_id}
-                      hover
-                      sx={{
-                        cursor: 'pointer',
-                        '&:last-child td': { borderBottom: 0 },
-                      }}
-                      onClick={() => navigate(`/results/${a.analysis_id}`)}
-                    >
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 260 }}>
-                          {a.filename}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={a.file_type?.toUpperCase()}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: '0.7rem', height: 22 }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight={700}>
-                          {a.overall_score?.toFixed(1)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={a.risk_level}
-                          size="small"
-                          sx={{
-                            backgroundColor: alpha(riskHex(a.risk_level), 0.1),
-                            color: riskHex(a.risk_level),
-                            fontWeight: 600,
-                            fontSize: '0.7rem',
-                            height: 22,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body2">{a.total_requirements}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          {formatRelative(a.created_at)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip title="View report">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/results/${a.analysis_id}`);
-                            }}
-                            sx={{ color: PURPLE }}
-                          >
-                            <VisibilityIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
+            <>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700 }}>File</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="right">Categories</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="right">Reqs</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>When</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">Action</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {analyses
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((a) => {
+                        const cats = parseCats(a.categories_present);
+                        return (
+                          <TableRow
+                            key={a.analysis_id}
+                            hover
+                            sx={{
+                              cursor: 'pointer',
+                              '&:last-child td': { borderBottom: 0 },
+                            }}
+                            onClick={() => navigate(`/results/${a.analysis_id}`)}
+                          >
+                            <TableCell>
+                              <Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 260 }}>
+                                {a.filename}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={a.file_type?.toUpperCase()}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.7rem', height: 22 }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight={700}>
+                                {cats.length}/7
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="body2">{a.total_requirements}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" color="text.secondary" noWrap>
+                                {formatRelative(a.created_at)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="center">
+                              <Tooltip title="View report">
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/results/${a.analysis_id}`);
+                                  }}
+                                  sx={{ color: PURPLE }}
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div"
+                count={analyses.length}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[10, 25, 50]}
+              />
+            </>
           )}
         </GlassCard>
       </Box>

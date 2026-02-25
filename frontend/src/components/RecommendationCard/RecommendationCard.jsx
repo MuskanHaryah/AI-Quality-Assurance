@@ -5,6 +5,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { GlassCard } from '../common/GlassCard';
 
 const priorityConfig = {
+  critical: { icon: <PriorityHighIcon fontSize="small" />, color: '#dc2626', label: 'Critical' },
   high: { icon: <PriorityHighIcon fontSize="small" />, color: '#ef4444', label: 'High' },
   medium: { icon: <WarningAmberIcon fontSize="small" />, color: '#f59e0b', label: 'Medium' },
   low: { icon: <InfoOutlinedIcon fontSize="small" />, color: '#3b82f6', label: 'Low' },

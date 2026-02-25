@@ -49,7 +49,11 @@ export default function Dashboard() {
       setAnalyses(analysesResp.analyses ?? []);
       setHealth(healthResp);
     } catch (err) {
-      setError(err.friendlyMessage || 'Failed to load dashboard data.');
+      let msg = err.friendlyMessage || 'Failed to load dashboard data.';
+      if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK' || msg.includes('Network Error')) {
+        msg = 'Cannot connect to the backend server. Please make sure the server is running (python app.py).';
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }

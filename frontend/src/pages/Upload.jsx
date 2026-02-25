@@ -66,7 +66,13 @@ export default function Upload() {
         navigate(`/results/${fileId}`);
       }, 600);
     } catch (err) {
-      const message = err.friendlyMessage || err.message || 'Something went wrong.';
+      let message = err.friendlyMessage || err.message || 'Something went wrong.';
+      // Make connection errors more user-friendly
+      if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK' || message.includes('Network Error')) {
+        message = 'Cannot connect to the backend server. Please make sure the server is running (python app.py).';
+      } else if (message.includes('status code 500')) {
+        message = 'Server error. Please restart the backend server and try again.';
+      }
       setError(message);
       setUploading(false);
       setAnalyzing(false);

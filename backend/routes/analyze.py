@@ -99,8 +99,23 @@ def analyze():
         return jsonify({
             "success": False,
             "error":   (
-                "No requirement statements found in the document. "
-                "Ensure it contains sentences with 'shall', 'must', 'should', etc."
+                "No requirement statements found in this document. "
+                "This does not appear to be an SRS (Software Requirements Specification). "
+                "Please upload a document that contains requirement sentences "
+                "with keywords like 'shall', 'must', 'should', 'requires', etc."
+            ),
+        }), 422
+
+    # Warn if very few requirements found (likely not a proper SRS)
+    if extraction["total_found"] < 3:
+        update_upload_status(file_id, "error")
+        return jsonify({
+            "success": False,
+            "error":   (
+                f"Only {extraction['total_found']} requirement(s) found. "
+                "This document does not contain enough requirement statements "
+                "to produce a meaningful analysis. A proper SRS typically has "
+                "at least 5-10 requirement statements. Please upload an SRS document."
             ),
         }), 422
 

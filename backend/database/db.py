@@ -81,6 +81,7 @@ def init_db() -> None:
         CREATE_UPLOADS_TABLE,
         CREATE_ANALYSES_TABLE,
         CREATE_REQUIREMENTS_TABLE,
+        CREATE_QUALITY_PLANS_TABLE,
         CREATE_INDICES,
     )
 
@@ -88,6 +89,7 @@ def init_db() -> None:
         conn.execute(CREATE_UPLOADS_TABLE)
         conn.execute(CREATE_ANALYSES_TABLE)
         conn.execute(CREATE_REQUIREMENTS_TABLE)
+        conn.execute(CREATE_QUALITY_PLANS_TABLE)
         for idx_sql in CREATE_INDICES:
             conn.execute(idx_sql)
 

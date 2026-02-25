@@ -14,9 +14,9 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DescriptionIcon from '@mui/icons-material/Description';
-import CategoryIcon from '@mui/icons-material/Category';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
@@ -24,7 +24,9 @@ import ScoreGauge from '../components/ScoreGauge/ScoreGauge';
 import CategoryChart from '../components/CategoryChart/CategoryChart';
 import RequirementsTable from '../components/RequirementsTable/RequirementsTable';
 import RecommendationCard, { GapAnalysisCard } from '../components/RecommendationCard/RecommendationCard';
-import { getReport } from '../api/services';
+import QualityPlanUpload from '../components/QualityPlanUpload/QualityPlanUpload';
+import QualityPlanReport from '../components/QualityPlanReport/QualityPlanReport';
+import { getReport, uploadQualityPlan, getQualityPlan } from '../api/services';
 import { formatDate, riskColor, categoryColors } from '../utils/helpers';
 import { PURPLE, TEAL } from '../theme/theme';
 
@@ -35,12 +37,27 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Quality Plan state
+  const [showQPUpload, setShowQPUpload] = useState(false);
+  const [qpUploading, setQpUploading] = useState(false);
+  const [qpProgress, setQpProgress] = useState(0);
+  const [qpResult, setQpResult] = useState(null);
+  const [qpError, setQpError] = useState(null);
+
   useEffect(() => {
     const fetchReport = () => {
       setLoading(true);
       setError(null);
       getReport(id)
-        .then((data) => setReport(data))
+        .then((data) => {
+          setReport(data);
+          // Also check if a quality plan already exists
+          getQualityPlan(id)
+            .then((qp) => {
+              if (qp?.has_plan) setQpResult(qp);
+            })
+            .catch(() => { /* no plan yet — that's fine */ });
+        })
         .catch((err) => setError(err.friendlyMessage || 'Failed to load report.'))
         .finally(() => setLoading(false));
     };
@@ -54,6 +71,21 @@ export default function Results() {
       .then((data) => setReport(data))
       .catch((err) => setError(err.friendlyMessage || 'Failed to load report.'))
       .finally(() => setLoading(false));
+  };
+
+  const handleQPUpload = async (file) => {
+    setQpError(null);
+    setQpUploading(true);
+    setQpProgress(0);
+    try {
+      const result = await uploadQualityPlan(id, file, setQpProgress);
+      setQpResult(result);
+      setShowQPUpload(false);
+    } catch (err) {
+      setQpError(err.friendlyMessage || 'Failed to analyze quality plan.');
+    } finally {
+      setQpUploading(false);
+    }
   };
 
   if (loading) return <Loading message="Loading analysis report…" fullPage />;
@@ -225,6 +257,67 @@ export default function Results() {
                 </Grid>
               ))}
             </Grid>
+          </Box>
+        )}
+
+        <Divider sx={{ my: 5 }} />
+
+        {/* ── Quality Plan Section ─────────────────────────────────── */}
+        {qpResult ? (
+          /* Show quality plan results if we have them */
+          <Box sx={{ mb: 4 }}>
+            <QualityPlanReport planData={qpResult} />
+          </Box>
+        ) : (
+          /* Ask user if they want to check their quality plan */
+          <Box sx={{ mb: 4 }}>
+            {!showQPUpload ? (
+              <GlassCard
+                sx={{
+                  textAlign: 'center',
+                  py: 5,
+                  background: 'linear-gradient(135deg, rgba(6,182,212,0.04), rgba(124,58,237,0.04))',
+                  border: `1px dashed rgba(124,58,237,0.3)`,
+                }}
+              >
+                <FactCheckIcon sx={{ fontSize: 48, color: TEAL, mb: 2 }} />
+                <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
+                  Want to check your Quality Plan?
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}>
+                  Upload your Quality Plan document and we&apos;ll analyze how well it covers
+                  the {summary?.total_requirements ?? 0} quality factors identified above.
+                  You&apos;ll see coverage scores, achievable quality, and improvement suggestions.
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<FactCheckIcon />}
+                  onClick={() => setShowQPUpload(true)}
+                  sx={{
+                    px: 4,
+                    py: 1.5,
+                    background: `linear-gradient(135deg, ${TEAL}, ${PURPLE})`,
+                    '&:hover': { background: `linear-gradient(135deg, ${PURPLE}, ${TEAL})` },
+                  }}
+                >
+                  Yes, Check My Quality Plan
+                </Button>
+              </GlassCard>
+            ) : (
+              <Box>
+                <QualityPlanUpload
+                  onUpload={handleQPUpload}
+                  uploading={qpUploading}
+                  progress={qpProgress}
+                />
+                {qpError && (
+                  <Box sx={{ mt: 2 }}>
+                    <ErrorDisplay message={qpError} onRetry={() => setQpError(null)} />
+                  </Box>
+                )}
+              </Box>
+            )}
           </Box>
         )}
 

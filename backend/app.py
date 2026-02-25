@@ -38,11 +38,13 @@ def create_app():
     from routes.analyze import analyze_bp
     from routes.predict import predict_bp
     from routes.report import report_bp
+    from routes.quality_plan import quality_plan_bp
 
     app.register_blueprint(upload_bp, url_prefix="/api")
     app.register_blueprint(analyze_bp, url_prefix="/api")
     app.register_blueprint(predict_bp, url_prefix="/api")
     app.register_blueprint(report_bp, url_prefix="/api")
+    app.register_blueprint(quality_plan_bp, url_prefix="/api")
 
     # Wire centralised HTTP-level error handlers
     from utils.error_handler import register_handlers

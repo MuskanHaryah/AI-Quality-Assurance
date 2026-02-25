@@ -59,6 +59,27 @@ CREATE TABLE IF NOT EXISTS requirements (
 );
 """
 
+# ── quality_plans ─────────────────────────────────────────────────────────── #
+CREATE_QUALITY_PLANS_TABLE: str = """
+CREATE TABLE IF NOT EXISTS quality_plans (
+    id               TEXT PRIMARY KEY,          -- unique plan ID
+    analysis_id      TEXT NOT NULL,             -- links to the SRS analysis it compares against
+    filename         TEXT NOT NULL,             -- sanitised filename on disk
+    original_name    TEXT NOT NULL,             -- filename as user uploaded
+    file_path        TEXT NOT NULL,             -- absolute path on disk
+    file_type        TEXT NOT NULL,             -- 'pdf' | 'docx'
+    size_bytes       INTEGER NOT NULL,
+    overall_coverage REAL    NOT NULL DEFAULT 0.0,  -- 0-100 coverage score
+    achievable_quality REAL  NOT NULL DEFAULT 0.0,  -- predicted quality if plan followed
+    category_coverage_json TEXT,                -- JSON: {Functionality: {covered: bool, evidence: [...]}, ...}
+    suggestions_json TEXT,                      -- JSON array of improvement suggestions
+    status           TEXT NOT NULL DEFAULT 'uploaded',  -- 'uploaded' | 'analyzed' | 'error'
+    created_at       TIMESTAMP NOT NULL
+                     DEFAULT (datetime('now')),
+    FOREIGN KEY (analysis_id) REFERENCES analyses(id) ON DELETE CASCADE
+);
+"""
+
 # ── performance indices ──────────────────────────────────────────────────── #
 CREATE_INDICES: list[str] = [
     "CREATE INDEX IF NOT EXISTS idx_uploads_status     ON uploads(status);",
@@ -67,4 +88,5 @@ CREATE_INDICES: list[str] = [
     "CREATE INDEX IF NOT EXISTS idx_analyses_created_at ON analyses(created_at DESC);",
     "CREATE INDEX IF NOT EXISTS idx_requirements_analysis_id ON requirements(analysis_id);",
     "CREATE INDEX IF NOT EXISTS idx_requirements_category    ON requirements(category);",
+    "CREATE INDEX IF NOT EXISTS idx_quality_plans_analysis_id ON quality_plans(analysis_id);",
 ]

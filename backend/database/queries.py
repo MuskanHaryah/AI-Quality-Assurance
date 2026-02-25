@@ -314,3 +314,74 @@ def save_full_analysis(
         f"reqs={len(req_rows)} score={analysis.get('overall_score', 0):.2f}"
     )
     return True
+
+
+# ──────────────────────────────────────────────────────────────────────────── #
+# QUALITY PLANS                                                                 #
+# ──────────────────────────────────────────────────────────────────────────── #
+
+def save_quality_plan(plan: Dict[str, Any]) -> bool:
+    """Insert or update a quality plan record with analysis results."""
+    sql = """
+        INSERT OR REPLACE INTO quality_plans (
+            id, analysis_id, filename, original_name, file_path, file_type,
+            size_bytes, overall_coverage, achievable_quality,
+            category_coverage_json, suggestions_json, status
+        )
+        VALUES (
+            :id, :analysis_id, :filename, :original_name, :file_path, :file_type,
+            :size_bytes, :overall_coverage, :achievable_quality,
+            :category_coverage_json, :suggestions_json, :status
+        )
+    """
+    with db_connection() as conn:
+        conn.execute(sql, {
+            "id":                     plan["id"],
+            "analysis_id":            plan["analysis_id"],
+            "filename":               plan["filename"],
+            "original_name":          plan.get("original_name", plan["filename"]),
+            "file_path":              plan["file_path"],
+            "file_type":              plan.get("file_type", "unknown"),
+            "size_bytes":             plan.get("size_bytes", 0),
+            "overall_coverage":       plan.get("overall_coverage", 0.0),
+            "achievable_quality":     plan.get("achievable_quality", 0.0),
+            "category_coverage_json": json.dumps(plan.get("category_coverage", {})),
+            "suggestions_json":       json.dumps(plan.get("suggestions", [])),
+            "status":                 plan.get("status", "analyzed"),
+        })
+    app_logger.info(f"Quality plan saved: id={plan['id']} analysis_id={plan['analysis_id']}")
+    return True
+
+
+def get_quality_plan(plan_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch a quality plan by its ID, deserialising JSON columns."""
+    sql = "SELECT * FROM quality_plans WHERE id = ?"
+    with db_connection() as conn:
+        row = conn.execute(sql, (plan_id,)).fetchone()
+    if not row:
+        return None
+    data = dict(row)
+    for col in ("category_coverage_json", "suggestions_json"):
+        if data.get(col):
+            try:
+                data[col] = json.loads(data[col])
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return data
+
+
+def get_quality_plan_by_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch the most recent quality plan for a given SRS analysis."""
+    sql = "SELECT * FROM quality_plans WHERE analysis_id = ? ORDER BY created_at DESC LIMIT 1"
+    with db_connection() as conn:
+        row = conn.execute(sql, (analysis_id,)).fetchone()
+    if not row:
+        return None
+    data = dict(row)
+    for col in ("category_coverage_json", "suggestions_json"):
+        if data.get(col):
+            try:
+                data[col] = json.loads(data[col])
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return data

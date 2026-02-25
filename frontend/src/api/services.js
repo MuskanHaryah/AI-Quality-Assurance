@@ -75,3 +75,36 @@ export const checkHealth = async () => {
   const response = await apiClient.get('/health');
   return response.data;
 };
+
+/**
+ * Upload and analyze a Quality Plan against an existing SRS analysis.
+ * @param {string} analysisId
+ * @param {File} file
+ * @param {function} onProgress – receives 0-100 percent
+ * @returns quality plan analysis result
+ */
+export const uploadQualityPlan = async (analysisId, file, onProgress) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await apiClient.post(`/quality-plan/${analysisId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(pct);
+      }
+    },
+  });
+  return response.data;
+};
+
+/**
+ * Get the quality plan analysis for an SRS analysis (if exists).
+ * @param {string} analysisId
+ */
+export const getQualityPlan = async (analysisId) => {
+  const response = await apiClient.get(`/quality-plan/${analysisId}`);
+  return response.data;
+};

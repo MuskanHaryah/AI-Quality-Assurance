@@ -28,8 +28,8 @@ import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
 import { getRecentAnalyses, checkHealth } from '../api/services';
-import { formatRelative, riskColor, riskHex } from '../utils/helpers';
-import { glassTokens, PURPLE, TEAL } from '../theme/theme';
+import { formatRelative, riskHex } from '../utils/helpers';
+import { PURPLE, TEAL } from '../theme/theme';
 
 export default function Dashboard() {
   const navigate = useNavigate();

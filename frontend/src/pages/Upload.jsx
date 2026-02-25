@@ -9,7 +9,6 @@ import {
   Stepper,
   Step,
   StepLabel,
-  alpha,
 } from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
@@ -55,7 +54,7 @@ export default function Upload() {
 
       // Step 2: Analyze
       setAnalyzing(true);
-      const analysisResult = await analyzeFile(fileId);
+      await analyzeFile(fileId);
       setAnalyzing(false);
 
       // Step 3: Navigate

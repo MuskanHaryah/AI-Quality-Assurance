@@ -1,0 +1,459 @@
+openapi: 3.0.3
+info:
+  title: QualityMapAI API
+  description: >
+    AI-powered software requirements quality analysis.
+    Upload PDF/DOCX documents, extract requirements, classify them
+    into ISO/IEC 9126 quality categories, and generate quality reports.
+  version: 1.0.0
+  contact:
+    name: QualityMapAI Team
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+
+tags:
+  - name: Health
+    description: Service health check
+  - name: Upload
+    description: File upload operations
+  - name: Analysis
+    description: Document analysis pipeline
+  - name: Predict
+    description: Quick text classification
+  - name: Report
+    description: Retrieve analysis reports
+  - name: Dashboard
+    description: Dashboard data
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Verify the backend is running and the ML model is loaded.
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: QualityMapAI backend running
+                  model:
+                    type: string
+                    example: tfidf_svm_classifier
+                  accuracy:
+                    type: number
+                    format: float
+                    example: 0.8438
+
+  /upload:
+    post:
+      tags: [Upload]
+      summary: Upload a document
+      description: Upload a PDF or DOCX file (max 10 MB) for analysis.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: PDF or DOCX file
+      responses:
+        "200":
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "400":
+          description: Validation error (no file, bad type, too large)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error saving file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyze:
+    post:
+      tags: [Analysis]
+      summary: Analyze an uploaded file
+      description: >
+        Run the full analysis pipeline: extract text, find requirements,
+        classify with ML, calculate quality scores, and save results.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [file_id]
+              properties:
+                file_id:
+                  type: string
+                  description: The file ID returned from /upload
+                  example: "20260223_152312_cf11b406"
+      responses:
+        "200":
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResponse"
+        "400":
+          description: Missing or empty file_id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Processing failed (extraction error or no requirements found)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /predict:
+    post:
+      tags: [Predict]
+      summary: Classify requirement text
+      description: >
+        Classify one or more plain-text requirement sentences into
+        ISO/IEC 9126 quality categories using the ML model.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [text]
+                  properties:
+                    text:
+                      type: string
+                      example: "The system shall encrypt all passwords."
+                - type: object
+                  required: [texts]
+                  properties:
+                    texts:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                        - "The system must respond in under 2 seconds."
+                        - "Users shall be able to reset their password."
+      responses:
+        "200":
+          description: Classification results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictResponse"
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /report/{analysis_id}:
+    get:
+      tags: [Report]
+      summary: Get analysis report
+      description: Retrieve the full analysis report including all requirements and scores.
+      parameters:
+        - name: analysis_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The analysis ID (same as file_id)
+      responses:
+        "200":
+          description: Full report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+        "404":
+          description: Analysis not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /analyses:
+    get:
+      tags: [Dashboard]
+      summary: List recent analyses
+      description: Get the 20 most recent analyses for the dashboard.
+      responses:
+        "200":
+          description: List of recent analyses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 5
+                  analyses:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AnalysisSummary"
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Human-readable error message"
+
+    UploadResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        file_id:
+          type: string
+          example: "20260223_152312_cf11b406"
+        filename:
+          type: string
+          example: "requirements.pdf"
+        file_type:
+          type: string
+          enum: [pdf, docx]
+        size_bytes:
+          type: integer
+          example: 204800
+        size_mb:
+          type: number
+          format: float
+          example: 0.20
+        status:
+          type: string
+          example: "uploaded"
+        message:
+          type: string
+
+    AnalysisResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        analysis_id:
+          type: string
+        total_requirements:
+          type: integer
+        overall_score:
+          type: number
+          format: float
+        risk:
+          type: object
+          properties:
+            level:
+              type: string
+              enum: [Low, Medium, High, Critical]
+            colour:
+              type: string
+        category_scores:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              count:
+                type: integer
+              percentage:
+                type: number
+              score:
+                type: number
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Requirement"
+        recommendations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recommendation"
+        gap_analysis:
+          type: array
+          items:
+            $ref: "#/components/schemas/GapItem"
+        categories_present:
+          type: array
+          items:
+            type: string
+        categories_missing:
+          type: array
+          items:
+            type: string
+        processing_time_s:
+          type: number
+          format: float
+
+    PredictResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              category:
+                type: string
+              confidence:
+                type: number
+              probabilities:
+                type: object
+                additionalProperties:
+                  type: number
+
+    ReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        analysis_id:
+          type: string
+        summary:
+          type: object
+          properties:
+            overall_score:
+              type: number
+            risk:
+              type: object
+              properties:
+                level:
+                  type: string
+            total_requirements:
+              type: integer
+            categories_present:
+              type: array
+              items:
+                type: string
+            categories_missing:
+              type: array
+              items:
+                type: string
+            created_at:
+              type: string
+            filename:
+              type: string
+            file_type:
+              type: string
+        category_scores:
+          type: object
+        requirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Requirement"
+        recommendations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recommendation"
+        gap_analysis:
+          type: array
+          items:
+            $ref: "#/components/schemas/GapItem"
+
+    AnalysisSummary:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+        filename:
+          type: string
+        file_type:
+          type: string
+        overall_score:
+          type: number
+        risk_level:
+          type: string
+        total_requirements:
+          type: integer
+        created_at:
+          type: string
+
+    Requirement:
+      type: object
+      properties:
+        text:
+          type: string
+        category:
+          type: string
+          enum:
+            - Efficiency
+            - Functionality
+            - Maintainability
+            - Portability
+            - Reliability
+            - Security
+            - Usability
+        confidence:
+          type: number
+        keyword_strength:
+          type: string
+          enum: [strong, weak]
+          nullable: true
+
+    Recommendation:
+      type: object
+      properties:
+        category:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+        message:
+          type: string
+
+    GapItem:
+      type: object
+      properties:
+        category:
+          type: string
+        gap_type:
+          type: string
+          enum: [missing, insufficient]
+        shortage:
+          type: integer

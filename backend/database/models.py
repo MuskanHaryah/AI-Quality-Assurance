@@ -58,3 +58,13 @@ CREATE TABLE IF NOT EXISTS requirements (
     FOREIGN KEY (analysis_id) REFERENCES analyses(id) ON DELETE CASCADE
 );
 """
+
+# ── performance indices ──────────────────────────────────────────────────── #
+CREATE_INDICES: list[str] = [
+    "CREATE INDEX IF NOT EXISTS idx_uploads_status     ON uploads(status);",
+    "CREATE INDEX IF NOT EXISTS idx_uploads_uploaded_at ON uploads(uploaded_at DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_analyses_upload_id  ON analyses(upload_id);",
+    "CREATE INDEX IF NOT EXISTS idx_analyses_created_at ON analyses(created_at DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_requirements_analysis_id ON requirements(analysis_id);",
+    "CREATE INDEX IF NOT EXISTS idx_requirements_category    ON requirements(category);",
+]

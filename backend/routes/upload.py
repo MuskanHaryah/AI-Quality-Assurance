@@ -37,6 +37,7 @@ upload_bp = Blueprint("upload", __name__)
 @upload_bp.route("/upload", methods=["POST"])
 @handle_exception
 def upload():
+    # Rate limit applied globally via flask-limiter (200/min, 50/s)
     # ── 1. Check a file was included ──────────────────────────────────── #
     if "file" not in request.files:
         return jsonify({"success": False, "error": "No file provided. Send field name 'file'."}), 400

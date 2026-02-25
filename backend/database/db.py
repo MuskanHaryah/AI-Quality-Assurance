@@ -74,14 +74,21 @@ def db_connection() -> Generator[sqlite3.Connection, None, None]:
 
 def init_db() -> None:
     """
-    Create all database tables if they do not already exist.
+    Create all database tables and indices if they do not already exist.
     Safe to call on every application startup.
     """
-    from database.models import CREATE_UPLOADS_TABLE, CREATE_ANALYSES_TABLE, CREATE_REQUIREMENTS_TABLE
+    from database.models import (
+        CREATE_UPLOADS_TABLE,
+        CREATE_ANALYSES_TABLE,
+        CREATE_REQUIREMENTS_TABLE,
+        CREATE_INDICES,
+    )
 
     with db_connection() as conn:
         conn.execute(CREATE_UPLOADS_TABLE)
         conn.execute(CREATE_ANALYSES_TABLE)
         conn.execute(CREATE_REQUIREMENTS_TABLE)
+        for idx_sql in CREATE_INDICES:
+            conn.execute(idx_sql)
 
     app_logger.info(f"Database initialised at: {_get_db_path()}")

@@ -18,7 +18,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { GlassCard } from '../components/common/GlassCard';
-import { glassTokens, PURPLE, TEAL, PINK } from '../theme/theme';
+import { PURPLE, TEAL, PINK } from '../theme/theme';
 import { checkHealth } from '../api/services';
 
 const features = [

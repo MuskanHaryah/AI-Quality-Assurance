@@ -150,6 +150,10 @@ def register_handlers(app: Flask) -> None:
     def unprocessable(e):
         return error_response("Could not process the provided data.", 422)
 
+    @app.errorhandler(429)
+    def rate_limit_exceeded(e):
+        return error_response("Rate limit exceeded. Please slow down.", 429)
+
     @app.errorhandler(500)
     def internal_error(e):
         app_logger.error(f"HTTP 500: {e}")

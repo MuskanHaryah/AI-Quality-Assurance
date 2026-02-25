@@ -26,7 +26,7 @@ import RequirementsTable from '../components/RequirementsTable/RequirementsTable
 import RecommendationCard, { GapAnalysisCard } from '../components/RecommendationCard/RecommendationCard';
 import { getReport } from '../api/services';
 import { formatDate, riskColor, categoryColors } from '../utils/helpers';
-import { glassTokens, PURPLE, TEAL } from '../theme/theme';
+import { PURPLE, TEAL } from '../theme/theme';
 
 export default function Results() {
   const { id } = useParams();
@@ -35,7 +35,19 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchReport = () => {
+  useEffect(() => {
+    const fetchReport = () => {
+      setLoading(true);
+      setError(null);
+      getReport(id)
+        .then((data) => setReport(data))
+        .catch((err) => setError(err.friendlyMessage || 'Failed to load report.'))
+        .finally(() => setLoading(false));
+    };
+    fetchReport();
+  }, [id]);
+
+  const handleRetry = () => {
     setLoading(true);
     setError(null);
     getReport(id)
@@ -44,12 +56,8 @@ export default function Results() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, [id]);
-
   if (loading) return <Loading message="Loading analysis report…" fullPage />;
-  if (error) return <Container maxWidth="md" sx={{ py: 8 }}><ErrorDisplay message={error} onRetry={fetchReport} fullPage /></Container>;
+  if (error) return <Container maxWidth="md" sx={{ py: 8 }}><ErrorDisplay message={error} onRetry={handleRetry} fullPage /></Container>;
   if (!report) return null;
 
   const { summary, category_scores, requirements, recommendations, gap_analysis, categories_present, categories_missing } = report;

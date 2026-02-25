@@ -2,8 +2,17 @@ import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from config import Config
+
+# Module-level limiter so blueprints can import it for per-route limits
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["200 per minute", "50 per second"],
+    storage_uri="memory://",
+)
 
 
 def create_app():
@@ -12,6 +21,9 @@ def create_app():
 
     # Enable CORS for all routes (allows React frontend on port 3000)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # Initialise rate limiter
+    limiter.init_app(app)
 
     # Ensure required folders exist
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)

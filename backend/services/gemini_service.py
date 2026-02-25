@@ -64,22 +64,35 @@ Document Preview (first 2000 chars):
 Requirements Category Distribution:
 {json.dumps(categories, indent=2)}
 
-Available domains:
+Common domains include (but you can identify others):
 - Banking/Finance
-- Healthcare
+- Healthcare  
 - E-commerce
-- Education
-- Government
-- IoT
-- Telecom
+- Education/LMS
 - Library Management
+- Government/Public Sector
+- IoT/Embedded
+- Telecom/Networking
 - Hotel/Hospitality
 - Restaurant/Food Service
 - HR/Payroll
 - Inventory/Warehouse
+- Zoo/Wildlife Management
+- Transportation/Logistics
+- Real Estate/Property
+- Gaming/Entertainment
+- Social Media
+- CRM/Sales
+- Manufacturing
+- Agriculture
+- Insurance
+- Legal/Law
+- Energy/Utilities
+- Aviation/Airline
+- Sports/Fitness
 
 Your task:
-1. Identify the MOST LIKELY domain (choose ONE from the list above)
+1. Identify the MOST LIKELY domain (you may identify ANY relevant domain, not limited to the list)
 2. Rate your confidence: High (0.8-1.0), Medium (0.5-0.79), Low (0-0.49)
 3. Identify which ISO/IEC 9126 categories are CRITICAL for this domain
 4. Provide brief reasoning

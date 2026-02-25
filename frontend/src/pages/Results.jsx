@@ -18,6 +18,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import LanguageIcon from '@mui/icons-material/Language';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
@@ -126,15 +127,47 @@ export default function Results() {
           <Grid size={{ xs: 12, md: 4 }}>
             <GlassCard sx={{ textAlign: 'center', py: 4, height: '100%' }}>
               <LanguageIcon sx={{ fontSize: 48, color: PURPLE, mb: 1 }} />
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                Detected Domain
-              </Typography>
+              <Stack direction="row" justifyContent="center" alignItems="center" spacing={0.5} sx={{ mb: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Detected Domain
+                </Typography>
+                {domain.method === 'gemini' && (
+                  <Chip
+                    icon={<AutoAwesomeIcon />}
+                    label="AI"
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.65rem',
+                      backgroundColor: alpha(PURPLE, 0.15),
+                      color: PURPLE,
+                      '& .MuiChip-icon': { fontSize: 12, color: PURPLE },
+                    }}
+                  />
+                )}
+              </Stack>
               <Typography variant="h5" fontWeight={800} color="text.primary">
                 {domain.domain || 'General'}
               </Typography>
               {domain.confidence > 0 && (
                 <Typography variant="caption" color="text.secondary">
                   Confidence: {Math.round(domain.confidence * 100)}%
+                </Typography>
+              )}
+              {domain.reasoning && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    mt: 1,
+                    display: 'block',
+                    fontStyle: 'italic',
+                    maxWidth: 280,
+                    mx: 'auto',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  "{domain.reasoning}"
                 </Typography>
               )}
               {Object.keys(domain.critical_categories || {}).length > 0 && (

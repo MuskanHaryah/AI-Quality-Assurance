@@ -2,6 +2,7 @@ import { Typography, Chip, Stack, alpha } from '@mui/material';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { GlassCard } from '../common/GlassCard';
 
 const priorityConfig = {
@@ -12,7 +13,7 @@ const priorityConfig = {
 };
 
 export default function RecommendationCard({ recommendation }) {
-  const { category, priority, message } = recommendation;
+  const { category, priority, message, ai_powered } = recommendation;
   const config = priorityConfig[priority?.toLowerCase()] || priorityConfig.low;
 
   return (
@@ -43,6 +44,21 @@ export default function RecommendationCard({ recommendation }) {
                 '& .MuiChip-icon': { color: config.color },
               }}
             />
+            {ai_powered && (
+              <Chip
+                icon={<AutoAwesomeIcon />}
+                label="AI"
+                size="small"
+                sx={{
+                  backgroundColor: alpha('#7c3aed', 0.1),
+                  color: '#7c3aed',
+                  fontWeight: 600,
+                  fontSize: '0.65rem',
+                  height: 22,
+                  '& .MuiChip-icon': { fontSize: 12, color: '#7c3aed' },
+                }}
+              />
+            )}
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
             {message}

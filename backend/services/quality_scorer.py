@@ -122,6 +122,22 @@ DOMAIN_KEYWORDS: Dict[str, List[str]] = {
         "supply chain", "dispatch", "receiving", "storage",
         "reorder", "inbound", "outbound", "logistics",
     ],
+    "Zoo / Wildlife Management": [
+        "zoo", "animal", "wildlife", "enclosure", "habitat",
+        "species", "veterinary", "feeding", "exhibit", "keeper",
+        "conservation", "sanctuary", "aquarium", "breeding",
+        "caretaker", "visitor", "safari", "mammal", "reptile",
+    ],
+    "Transportation / Logistics": [
+        "vehicle", "fleet", "route", "driver", "transport",
+        "cargo", "tracking", "gps", "delivery", "dispatch",
+        "trip", "fare", "passenger", "schedule", "transit",
+    ],
+    "Real Estate / Property": [
+        "property", "tenant", "lease", "real estate", "rental",
+        "landlord", "apartment", "listing", "mortgage", "agent",
+        "building", "maintenance", "unit", "occupant",
+    ],
 }
 
 # Which ISO 9126 categories are *especially* critical for each domain
@@ -187,6 +203,21 @@ DOMAIN_CRITICAL_CATEGORIES: Dict[str, Dict[str, str]] = {
     "Inventory / Warehouse": {
         "Reliability": "critical",
         "Efficiency":  "high",
+        "Functionality": "high",
+    },
+    "Zoo / Wildlife Management": {
+        "Reliability": "critical",
+        "Usability":   "high",
+        "Functionality": "high",
+    },
+    "Transportation / Logistics": {
+        "Reliability": "critical",
+        "Efficiency":  "critical",
+        "Security":    "high",
+    },
+    "Real Estate / Property": {
+        "Security":    "high",
+        "Usability":   "high",
         "Functionality": "high",
     },
 }

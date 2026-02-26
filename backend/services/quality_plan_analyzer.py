@@ -171,7 +171,7 @@ def analyze_quality_plan(
 
         category_coverage[cat] = {
             "covered":           is_covered,
-            "evidence_snippets": evidence[:5],  # max 5 snippets per category
+            "evidence_snippets": evidence,  # all evidence snippets
             "evidence_count":    len(evidence),
             "in_srs":            is_in_srs,
             "srs_requirement_count": srs_count,
@@ -285,33 +285,63 @@ def analyze_quality_plan(
 
 def _find_evidence(text_lower: str, original_text: str, keywords: List[str]) -> List[str]:
     """
-    Search the plan text for keyword matches and return surrounding context snippets.
+    Search the plan text for keyword matches and return clean sentence-based
+    evidence snippets.
 
-    Returns a list of short evidence strings like:
-        "...performance test will be conducted on every release..."
+    Strategy:
+        1. Split text into sentences (or logical segments).
+        2. For each sentence that contains a keyword, include it as evidence.
+        3. De-duplicate and clean up each snippet.
+
+    Returns a list of clean evidence strings, each a proper sentence/phrase.
     """
+    # ── Split text into sentences ────────────────────────────────────── #
+    # Split on sentence-ending punctuation, numbering patterns, or newlines
+    raw_sentences = re.split(
+        r'(?<=[.!?])\s+|(?<=\n)\s*|\s*\n\s*|(?<=\d)\.\s+(?=[A-Z])',
+        original_text,
+    )
+
+    # Clean and filter sentences (skip very short or empty)
+    sentences: List[str] = []
+    for s in raw_sentences:
+        cleaned = s.strip()
+        # Collapse whitespace inside
+        cleaned = re.sub(r'\s+', ' ', cleaned)
+        if len(cleaned) >= 15:  # skip trivial fragments
+            sentences.append(cleaned)
+
+    # ── Find sentences that contain keywords ─────────────────────────── #
     evidence: List[str] = []
-    seen_positions: set = set()
+    seen: set = set()
 
     for keyword in keywords:
-        # Find all occurrences
-        for match in re.finditer(re.escape(keyword), text_lower):
-            start = match.start()
-            # Avoid duplicate snippets from overlapping regions
-            bucket = start // 80
-            if bucket in seen_positions:
-                continue
-            seen_positions.add(bucket)
+        kw_lower = keyword.lower()
+        for sentence in sentences:
+            if kw_lower in sentence.lower():
+                # Normalise for dedup: lowercase trimmed version
+                dedup_key = sentence.lower().strip()[:120]
+                if dedup_key in seen:
+                    continue
+                seen.add(dedup_key)
 
-            # Extract surrounding context (±60 chars)
-            snippet_start = max(0, start - 60)
-            snippet_end = min(len(original_text), match.end() + 60)
-            snippet = original_text[snippet_start:snippet_end].strip()
-            # Clean up partial words at edges
-            snippet = re.sub(r"^\S*\s", "", snippet)
-            snippet = re.sub(r"\s\S*$", "", snippet)
-            if snippet:
-                evidence.append(f"...{snippet}...")
+                # Trim overly long sentences to keep evidence readable
+                snippet = sentence
+                if len(snippet) > 200:
+                    # Find the keyword position and take a window around it
+                    idx = snippet.lower().find(kw_lower)
+                    window_start = max(0, idx - 80)
+                    window_end = min(len(snippet), idx + len(kw_lower) + 80)
+                    snippet = snippet[window_start:window_end].strip()
+                    # Clean partial words at edges
+                    if window_start > 0:
+                        snippet = re.sub(r'^\S*\s', '', snippet)
+                        snippet = f"...{snippet}"
+                    if window_end < len(sentence):
+                        snippet = re.sub(r'\s\S*$', '', snippet)
+                        snippet = f"{snippet}..."
+
+                evidence.append(snippet)
 
     return evidence
 

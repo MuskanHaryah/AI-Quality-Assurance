@@ -293,13 +293,43 @@ function CategoryCoverageRow({ category, data }) {
       {/* Expandable evidence snippets */}
       <Collapse in={expanded}>
         <Box sx={{ ml: 6, mt: 1.5, mb: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
-            Evidence found in your Quality Plan:
-          </Typography>
-          <Stack spacing={1}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              Evidence found in your Quality Plan
+            </Typography>
+            <Chip
+              label={`${snippets.length} found`}
+              size="small"
+              sx={{
+                height: 18,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                backgroundColor: alpha(color, 0.1),
+                color,
+              }}
+            />
+          </Stack>
+          <Stack
+            spacing={1}
+            sx={{
+              ...(showAll && snippets.length > 6 ? {
+                maxHeight: 400,
+                overflowY: 'auto',
+                pr: 1,
+                '&::-webkit-scrollbar': { width: 4 },
+                '&::-webkit-scrollbar-thumb': {
+                  backgroundColor: alpha(color, 0.2),
+                  borderRadius: 2,
+                },
+              } : {}),
+            }}
+          >
             {(showAll ? snippets : snippets.slice(0, 3)).map((snippet, idx) => (
-              <Box
+              <Stack
                 key={idx}
+                direction="row"
+                spacing={1.5}
+                alignItems="flex-start"
                 sx={{
                   p: 1.5,
                   borderRadius: 1.5,
@@ -308,6 +338,25 @@ function CategoryCoverageRow({ category, data }) {
                 }}
               >
                 <Typography
+                  variant="caption"
+                  sx={{
+                    minWidth: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: alpha(color, 0.1),
+                    color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    flexShrink: 0,
+                    mt: 0.2,
+                  }}
+                >
+                  {idx + 1}
+                </Typography>
+                <Typography
                   variant="body2"
                   sx={{
                     color: 'text.secondary',
@@ -315,9 +364,9 @@ function CategoryCoverageRow({ category, data }) {
                     fontSize: '0.8rem',
                   }}
                 >
-                  &ldquo;{snippet.trim()}&rdquo;
+                  {snippet.trim()}
                 </Typography>
-              </Box>
+              </Stack>
             ))}
           </Stack>
           {snippets.length > 3 && !showAll && (
@@ -326,7 +375,7 @@ function CategoryCoverageRow({ category, data }) {
               onClick={() => setShowAll(true)}
               sx={{ mt: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}
             >
-              View More ({snippets.length - 3} more)
+              View All {snippets.length} Evidence
             </Button>
           )}
           {showAll && snippets.length > 3 && (

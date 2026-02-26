@@ -10,6 +10,7 @@ import {
   Button,
   Divider,
   alpha,
+  Alert,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
@@ -19,6 +20,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import LanguageIcon from '@mui/icons-material/Language';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
@@ -120,6 +122,35 @@ export default function Results() {
             </Stack>
           </Stack>
         </Stack>
+
+        {/* Document Type Warning - AI detected this may not be an SRS */}
+        {domain.document_type_warning && (
+          <Alert
+            severity="error"
+            icon={<WarningAmberIcon />}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+              Wrong Document Type Detected
+              {domain.document_type_warning.method === 'gemini' && (
+                <Chip 
+                  label="AI" 
+                  size="small" 
+                  sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} 
+                />
+              )}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              This document appears to be a <strong>{domain.document_type_warning.detected_type}</strong> rather than an SRS (Software Requirements Specification).
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {domain.document_type_warning.reasoning}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+              Confidence: {Math.round((domain.document_type_warning.confidence || 0) * 100)}% | Please upload an actual SRS document for accurate requirement analysis.
+            </Typography>
+          </Alert>
+        )}
 
         {/* Top Row: Domain + Overview */}
         <Grid container spacing={3} sx={{ mb: 4 }}>

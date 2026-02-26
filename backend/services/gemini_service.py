@@ -278,3 +278,91 @@ Respond in this EXACT JSON format:
     except Exception as e:
         print(f"Gemini QP analysis error: {e}")
         return None
+
+
+def detect_document_type_with_gemini(text: str, expected_type: str = "SRS") -> dict:
+    """
+    Use Gemini AI to detect what type of document was uploaded.
+    
+    Args:
+        text: Full document text
+        expected_type: What the user claims it is ("SRS" or "Quality Plan")
+        
+    Returns:
+        dict with {
+            "detected_type": "SRS" | "Quality Plan" | "User Manual" | "Design Document" | etc,
+            "is_expected_type": bool,
+            "confidence": float (0-1),
+            "warning": str or None,
+            "reasoning": str
+        }
+        or None if Gemini unavailable
+    """
+    if not GEMINI_AVAILABLE:
+        return None
+        
+    try:
+        prompt = f"""You are a document classifier. Analyze this document and determine what type of technical document it is.
+
+Document Preview (first 3000 chars):
+{text[:3000]}
+
+The user uploaded this as: {expected_type}
+
+Common document types include:
+- SRS (Software Requirements Specification) - Contains "shall", "must", "should" statements defining what the system will do
+- Quality Plan / Test Plan - Describes testing strategies, quality metrics, review processes, test cases
+- User Manual / User Guide - Instructions for end users on how to use the software
+- Design Document / Technical Specification - Describes system architecture, components, data models
+- API Documentation - Describes API endpoints, request/response formats
+- Project Proposal / Business Case - Describes project goals, budget, timeline
+- Meeting Minutes / Notes - Records of meetings
+- Resume / CV - Personal employment history
+- Academic Paper / Thesis - Research document with citations
+- General Report - Business or technical report
+- Unknown / Other - Cannot determine
+
+Your task:
+1. Identify the MOST LIKELY document type
+2. Determine if it matches what the user expected ({expected_type})
+3. Rate your confidence (0.0-1.0)
+4. If it doesn't match, provide a helpful warning
+
+Respond in this EXACT JSON format:
+{{
+    "detected_type": "Document Type Name",
+    "is_expected_type": true/false,
+    "confidence": 0.85,
+    "reasoning": "Brief explanation of why you classified it this way"
+}}"""
+
+        response = GEMINI_CLIENT.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt
+        )
+        result_text = response.text.strip()
+        
+        # Extract JSON from potential markdown code blocks
+        if "```json" in result_text:
+            result_text = result_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in result_text:
+            result_text = result_text.split("```")[1].split("```")[0].strip()
+        
+        result = json.loads(result_text)
+        
+        # Add warning message if document doesn't match expected type
+        if not result.get("is_expected_type", True):
+            detected = result.get("detected_type", "Unknown")
+            result["warning"] = (
+                f"This document appears to be a '{detected}' rather than a {expected_type}. "
+                f"{result.get('reasoning', '')} "
+                f"Please upload an actual {expected_type} document for accurate analysis."
+            )
+        else:
+            result["warning"] = None
+            
+        return result
+        
+    except Exception as e:
+        print(f"Gemini document type detection error: {e}")
+        return None

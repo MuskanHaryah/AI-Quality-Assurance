@@ -51,7 +51,7 @@ export default function QualityPlanReport({ planData }) {
     suggestions,
     summary,
     domain_match,
-    srs_warning,
+    document_type_warning,
   } = planData;
 
   const strengthCfg = strengthConfig[plan_strength] || strengthConfig.Weak;
@@ -65,8 +65,8 @@ export default function QualityPlanReport({ planData }) {
         chip={{ label: strengthCfg.label, color: plan_strength === 'Strong' ? 'success' : plan_strength === 'Moderate' ? 'warning' : 'error' }}
       />
 
-      {/* SRS Document Warning - uploaded SRS instead of Quality Plan */}
-      {srs_warning && (
+      {/* Document Type Warning - uploaded wrong document type */}
+      {document_type_warning && (
         <Alert
           severity="error"
           icon={<WarningAmberIcon />}
@@ -74,12 +74,22 @@ export default function QualityPlanReport({ planData }) {
         >
           <Typography variant="subtitle2" fontWeight={600} gutterBottom>
             Wrong Document Type Detected
+            {document_type_warning.method === 'gemini' && (
+              <Chip 
+                label="AI" 
+                size="small" 
+                sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} 
+              />
+            )}
           </Typography>
-          <Typography variant="body2">
-            {srs_warning.warning}
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            This document appears to be a <strong>{document_type_warning.detected_type}</strong> rather than a Quality Plan.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {document_type_warning.reasoning}
           </Typography>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-            SRS indicators: {srs_warning.srs_indicators_found} | Quality Plan indicators: {srs_warning.qp_indicators_found}
+            Confidence: {Math.round((document_type_warning.confidence || 0) * 100)}% | Please upload an actual Quality Plan document.
           </Typography>
         </Alert>
       )}

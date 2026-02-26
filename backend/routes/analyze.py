@@ -49,6 +49,7 @@ from services.classifier import classifier
 from services.document_processor import process_document
 from services.quality_scorer import build_full_report
 from services.requirement_extractor import extract_requirements
+from services.gemini_service import detect_document_type_with_gemini
 from utils.error_handler import handle_exception
 from utils.logger import app_logger
 
@@ -92,6 +93,21 @@ def analyze():
         f"Text extracted: {doc_result['word_count']} words, {doc_result['page_count']} pages"
     )
 
+    # ── 3.5 AI-powered document type detection ────────────────────────────── #
+    doc_type_warning = None
+    ai_doc_check = detect_document_type_with_gemini(raw_text, expected_type="SRS")
+    if ai_doc_check and not ai_doc_check.get("is_expected_type", True):
+        doc_type_warning = {
+            "detected_type": ai_doc_check.get("detected_type", "Unknown"),
+            "warning": ai_doc_check.get("warning"),
+            "confidence": ai_doc_check.get("confidence", 0),
+            "reasoning": ai_doc_check.get("reasoning", ""),
+            "method": "gemini",
+        }
+        app_logger.warning(
+            f"Document type mismatch: expected SRS, detected {doc_type_warning['detected_type']}"
+        )
+
     # ── 4. Extract requirement candidates ─────────────────────────────────── #
     extraction = extract_requirements(raw_text)
     if extraction["total_found"] == 0:
@@ -134,6 +150,10 @@ def analyze():
     # ── 6. Calculate quality scores ───────────────────────────────────────── #
     report = build_full_report(classified, raw_text=raw_text)
 
+    # Add document type warning to domain info (stored in DB)
+    domain_with_warning = report["domain"].copy()
+    domain_with_warning["document_type_warning"] = doc_type_warning
+
     # ── 7. Persist to database (single atomic transaction) ───────────────── #
     try:
         save_full_analysis(
@@ -148,7 +168,7 @@ def analyze():
                 "category_scores":     report["category_scores"],
                 "recommendations":     report["recommendations"],
                 "gap_analysis":        report["gap_analysis"],
-                "domain":              report["domain"],
+                "domain":              domain_with_warning,
             },
             requirements=classified,
             upload_status="completed",
@@ -192,5 +212,6 @@ def analyze():
             "file_type":   doc_result["file_type"],
         },
         "extraction_stats":   extraction["extraction_stats"],
+        "document_type_warning": doc_type_warning,
         "processing_time_s":  elapsed,
     }), 200

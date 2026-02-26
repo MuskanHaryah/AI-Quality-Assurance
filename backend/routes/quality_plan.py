@@ -22,6 +22,7 @@ from database.queries import (
 )
 from services.document_processor import process_document
 from services.quality_plan_analyzer import analyze_quality_plan
+from services.gemini_service import detect_document_type_with_gemini
 from utils.file_handler import save_uploaded_file
 from utils.error_handler import handle_exception
 from utils.logger import app_logger
@@ -31,21 +32,42 @@ quality_plan_bp = Blueprint("quality_plan", __name__)
 
 
 # --------------------------------------------------------------------------- #
-# Helper: Detect if document looks like an SRS instead of a Quality Plan
+# Helper: Detect if document looks like a Quality Plan (AI + keyword fallback)
 # --------------------------------------------------------------------------- #
-def _detect_srs_document(text: str) -> dict:
+def _detect_document_type(text: str) -> dict:
     """
-    Check if the document appears to be an SRS (Software Requirements Specification)
-    rather than a Quality Plan.
+    Check if the document is actually a Quality Plan using AI + keyword fallback.
     
     Returns:
         {
-            "is_likely_srs": bool,
+            "is_valid_qp": bool,
+            "detected_type": str,
             "warning": str or None,
+            "confidence": float,
+            "method": "gemini" | "keyword",
             "srs_indicators_found": int,
             "qp_indicators_found": int
         }
     """
+    # Try AI detection first
+    ai_result = detect_document_type_with_gemini(text, expected_type="Quality Plan")
+    
+    if ai_result:
+        is_valid = ai_result.get("is_expected_type", False)
+        return {
+            "is_valid_qp": is_valid,
+            "detected_type": ai_result.get("detected_type", "Unknown"),
+            "warning": ai_result.get("warning"),
+            "confidence": ai_result.get("confidence", 0.0),
+            "reasoning": ai_result.get("reasoning", ""),
+            "method": "gemini",
+            "srs_indicators_found": 0,
+            "qp_indicators_found": 0,
+        }
+    
+    # Fallback to keyword-based detection
+    app_logger.info("Using keyword-based QP detection (Gemini unavailable)")
+    
     text_lower = text.lower()
     
     # SRS indicators - requirement-style keywords
@@ -69,21 +91,35 @@ def _detect_srs_document(text: str) -> dict:
     srs_count = sum(1 for kw in srs_keywords if kw in text_lower)
     qp_count = sum(1 for kw in qp_keywords if kw in text_lower)
     
-    # If SRS indicators significantly outnumber QP indicators, it's likely an SRS
+    # Document is valid QP if it has QP indicators and not too many SRS indicators
+    is_valid_qp = qp_count >= 3 or (qp_count > 0 and srs_count < qp_count * 3)
     is_likely_srs = srs_count > 5 and srs_count > qp_count * 2
     
     warning = None
-    if is_likely_srs:
-        warning = (
-            "Warning: This document appears to be an SRS (Software Requirements Specification) "
-            f"rather than a Quality Plan. Found {srs_count} requirement-style indicators "
-            f"vs {qp_count} quality plan indicators. Please upload an actual Quality Plan document "
-            "that describes testing strategies, quality metrics, and review processes."
-        )
+    detected_type = "Quality Plan" if is_valid_qp else ("SRS" if is_likely_srs else "Unknown Document")
+    
+    if not is_valid_qp:
+        if is_likely_srs:
+            warning = (
+                f"This document appears to be an SRS (Software Requirements Specification) "
+                f"rather than a Quality Plan. Found {srs_count} requirement-style indicators "
+                f"vs {qp_count} quality plan indicators. Please upload an actual Quality Plan document "
+                "that describes testing strategies, quality metrics, and review processes."
+            )
+        else:
+            warning = (
+                f"This document does not appear to be a Quality Plan. "
+                f"Found only {qp_count} quality plan indicators. "
+                "A Quality Plan should describe testing strategies, quality metrics, review processes, etc."
+            )
     
     return {
-        "is_likely_srs": is_likely_srs,
+        "is_valid_qp": is_valid_qp,
+        "detected_type": detected_type,
         "warning": warning,
+        "confidence": 0.7 if (is_valid_qp or is_likely_srs) else 0.4,
+        "reasoning": f"Keyword analysis: {qp_count} QP indicators, {srs_count} SRS indicators",
+        "method": "keyword",
         "srs_indicators_found": srs_count,
         "qp_indicators_found": qp_count,
     }
@@ -154,8 +190,8 @@ def upload_and_analyze_quality_plan(analysis_id):
             "error": "Quality plan document seems empty or too short to analyze.",
         }), 422
 
-    # ── 4.5 Detect if document looks like an SRS instead of Quality Plan ─ #
-    srs_warning = _detect_srs_document(plan_text)
+    # ── 4.5 AI-powered document type detection ───────────────────────── #
+    doc_type_result = _detect_document_type(plan_text)
 
     # ── 5. Get SRS analysis data for comparison ──────────────────────── #
     srs_category_scores = analysis.get("category_scores_json", {})
@@ -213,6 +249,17 @@ def upload_and_analyze_quality_plan(analysis_id):
         f"achievable={plan_result['achievable_quality']:.1f}%, time={elapsed}s"
     )
 
+    # Build document type warning info for frontend
+    doc_type_warning = None
+    if not doc_type_result.get("is_valid_qp", True):
+        doc_type_warning = {
+            "detected_type": doc_type_result.get("detected_type", "Unknown"),
+            "warning": doc_type_result.get("warning"),
+            "confidence": doc_type_result.get("confidence", 0),
+            "reasoning": doc_type_result.get("reasoning", ""),
+            "method": doc_type_result.get("method", "keyword"),
+        }
+
     return jsonify({
         "success":            True,
         "plan_id":            plan_id,
@@ -224,7 +271,7 @@ def upload_and_analyze_quality_plan(analysis_id):
         "suggestions":        plan_result["suggestions"],
         "summary":            plan_result["summary"],
         "domain_match":       plan_result.get("domain_match", {}),
-        "srs_warning":        srs_warning if srs_warning.get("is_likely_srs") else None,
+        "document_type_warning": doc_type_warning,
         "processing_time_s":  elapsed,
     }), 200
 

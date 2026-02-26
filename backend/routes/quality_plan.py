@@ -30,6 +30,65 @@ from utils.validators import validate_file_size, validate_file_type
 quality_plan_bp = Blueprint("quality_plan", __name__)
 
 
+# --------------------------------------------------------------------------- #
+# Helper: Detect if document looks like an SRS instead of a Quality Plan
+# --------------------------------------------------------------------------- #
+def _detect_srs_document(text: str) -> dict:
+    """
+    Check if the document appears to be an SRS (Software Requirements Specification)
+    rather than a Quality Plan.
+    
+    Returns:
+        {
+            "is_likely_srs": bool,
+            "warning": str or None,
+            "srs_indicators_found": int,
+            "qp_indicators_found": int
+        }
+    """
+    text_lower = text.lower()
+    
+    # SRS indicators - requirement-style keywords
+    srs_keywords = [
+        " shall ", " must ", " should ", " will ",
+        "the system shall", "the software shall", "the application shall",
+        "requirement", "srs", "software requirements specification",
+        "functional requirement", "non-functional requirement",
+        "use case", "user story", "acceptance criteria",
+    ]
+    
+    # Quality Plan indicators
+    qp_keywords = [
+        "quality plan", "test plan", "test strategy", "test case",
+        "quality assurance", "qa plan", "testing approach",
+        "test coverage", "defect management", "quality metric",
+        "review process", "inspection", "audit", "quality objective",
+        "quality standard", "iso 9126", "quality attribute",
+    ]
+    
+    srs_count = sum(1 for kw in srs_keywords if kw in text_lower)
+    qp_count = sum(1 for kw in qp_keywords if kw in text_lower)
+    
+    # If SRS indicators significantly outnumber QP indicators, it's likely an SRS
+    is_likely_srs = srs_count > 5 and srs_count > qp_count * 2
+    
+    warning = None
+    if is_likely_srs:
+        warning = (
+            "Warning: This document appears to be an SRS (Software Requirements Specification) "
+            f"rather than a Quality Plan. Found {srs_count} requirement-style indicators "
+            f"vs {qp_count} quality plan indicators. Please upload an actual Quality Plan document "
+            "that describes testing strategies, quality metrics, and review processes."
+        )
+    
+    return {
+        "is_likely_srs": is_likely_srs,
+        "warning": warning,
+        "srs_indicators_found": srs_count,
+        "qp_indicators_found": qp_count,
+    }
+
+
 @quality_plan_bp.route("/quality-plan/<analysis_id>", methods=["POST"])
 @handle_exception
 def upload_and_analyze_quality_plan(analysis_id):
@@ -94,6 +153,9 @@ def upload_and_analyze_quality_plan(analysis_id):
             "success": False,
             "error": "Quality plan document seems empty or too short to analyze.",
         }), 422
+
+    # ── 4.5 Detect if document looks like an SRS instead of Quality Plan ─ #
+    srs_warning = _detect_srs_document(plan_text)
 
     # ── 5. Get SRS analysis data for comparison ──────────────────────── #
     srs_category_scores = analysis.get("category_scores_json", {})
@@ -162,6 +224,7 @@ def upload_and_analyze_quality_plan(analysis_id):
         "suggestions":        plan_result["suggestions"],
         "summary":            plan_result["summary"],
         "domain_match":       plan_result.get("domain_match", {}),
+        "srs_warning":        srs_warning if srs_warning.get("is_likely_srs") else None,
         "processing_time_s":  elapsed,
     }), 200
 

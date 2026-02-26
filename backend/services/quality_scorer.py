@@ -405,12 +405,24 @@ def generate_recommendations(
     recommendations: List[Dict[str, str]] = []
     domain = (domain_info or {}).get("domain", "General")
     critical_cats = (domain_info or {}).get("critical_categories", {})
+    
+    # Calculate total requirements for percentage-based checks
+    total_requirements = sum(
+        category_scores.get(cat, {}).get("count", 0) for cat in ALL_CATEGORIES
+    )
 
     for cat in ALL_CATEGORIES:
         data = category_scores.get(cat, {})
         count = data.get("count", 0)
         min_rec = data.get("min_recommended", 1)
+        percentage = data.get("percentage", 0)
         domain_importance = critical_cats.get(cat)          # "critical" | "high" | None
+        
+        # Minimum thresholds for domain-critical categories
+        critical_min_count = 5      # Critical categories need at least 5 requirements
+        critical_min_pct = 8        # Critical categories should be at least 8% of total
+        high_min_count = 3          # High-importance categories need at least 3
+        high_min_pct = 5            # High-importance categories should be at least 5%
 
         if count == 0:
             # Determine priority based on domain
@@ -452,6 +464,28 @@ def generate_recommendations(
                         if domain_importance
                         else ""
                     )
+                ),
+            })
+        # NEW: Check if domain-critical category has insufficient coverage
+        elif domain_importance == "critical" and (count < critical_min_count or percentage < critical_min_pct):
+            recommendations.append({
+                "category": cat,
+                "priority": "critical",
+                "message": (
+                    f"{cat} is CRITICAL for {domain} systems but only has {count} requirement(s) "
+                    f"({percentage:.1f}% of total). For {domain} projects, {cat.lower()} "
+                    f"requirements should represent at least {critical_min_pct}% of the specification. "
+                    f"Consider adding more {cat.lower()} requirements to reduce project risk."
+                ),
+            })
+        elif domain_importance == "high" and (count < high_min_count or percentage < high_min_pct):
+            recommendations.append({
+                "category": cat,
+                "priority": "high",
+                "message": (
+                    f"{cat} is highly important for {domain} systems but only has {count} requirement(s) "
+                    f"({percentage:.1f}% of total). Consider strengthening {cat.lower()} coverage "
+                    f"to at least {high_min_count} requirements."
                 ),
             })
 

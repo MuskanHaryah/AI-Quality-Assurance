@@ -159,7 +159,8 @@ export default function RequirementsTable({ requirements = [] }) {
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((req, idx) => {
                 const color = categoryColors[req.category] || '#64748b';
-                const conf = ((req.confidence ?? 0) * 100).toFixed(0);
+                // Backend sends confidence as 0-100, no need to multiply
+                const conf = Math.round(req.confidence ?? 0);
                 return (
                   <TableRow
                     key={req.id ?? idx}

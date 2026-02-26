@@ -106,7 +106,7 @@ Respond in this EXACT JSON format:
 }}"""
 
         response = GEMINI_CLIENT.models.generate_content(
-            model='gemini-2.0-flash-exp',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         result_text = response.text.strip()
@@ -189,7 +189,7 @@ Respond in this EXACT JSON format:
 }}"""
 
         response = GEMINI_CLIENT.models.generate_content(
-            model='gemini-2.0-flash-exp',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         result_text = response.text.strip()
@@ -257,7 +257,7 @@ Respond in this EXACT JSON format:
 }}"""
 
         response = GEMINI_CLIENT.models.generate_content(
-            model='gemini-2.0-flash-exp',
+            model='gemini-2.0-flash',
             contents=prompt
         )
         result_text = response.text.strip()

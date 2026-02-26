@@ -51,6 +51,7 @@ export default function QualityPlanReport({ planData }) {
     suggestions,
     summary,
     domain_match,
+    srs_warning,
   } = planData;
 
   const strengthCfg = strengthConfig[plan_strength] || strengthConfig.Weak;
@@ -63,6 +64,25 @@ export default function QualityPlanReport({ planData }) {
         subtitle="How well does your quality plan cover the SRS requirements?"
         chip={{ label: strengthCfg.label, color: plan_strength === 'Strong' ? 'success' : plan_strength === 'Moderate' ? 'warning' : 'error' }}
       />
+
+      {/* SRS Document Warning - uploaded SRS instead of Quality Plan */}
+      {srs_warning && (
+        <Alert
+          severity="error"
+          icon={<WarningAmberIcon />}
+          sx={{ mb: 3 }}
+        >
+          <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+            Wrong Document Type Detected
+          </Typography>
+          <Typography variant="body2">
+            {srs_warning.warning}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+            SRS indicators: {srs_warning.srs_indicators_found} | Quality Plan indicators: {srs_warning.qp_indicators_found}
+          </Typography>
+        </Alert>
+      )}
 
       {/* Domain Mismatch Warning */}
       {domainMismatch && (
@@ -86,7 +106,7 @@ export default function QualityPlanReport({ planData }) {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Coverage Score */}
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <GlassCard sx={{ textAlign: 'center', py: 3 }}>
+          <GlassCard sx={{ textAlign: 'center', py: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <ShieldIcon sx={{ fontSize: 40, color: TEAL, mb: 1 }} />
             <Typography variant="h3" fontWeight={800} sx={{ color: TEAL }}>
               {Math.round(overall_coverage)}%
@@ -102,7 +122,7 @@ export default function QualityPlanReport({ planData }) {
 
         {/* Achievable Quality */}
         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <GlassCard sx={{ textAlign: 'center', py: 3 }}>
+          <GlassCard sx={{ textAlign: 'center', py: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <VerifiedIcon sx={{ fontSize: 40, color: PURPLE, mb: 1 }} />
             <Typography variant="h3" fontWeight={800} sx={{ color: PURPLE }}>
               {Math.round(achievable_quality)}%
@@ -117,8 +137,8 @@ export default function QualityPlanReport({ planData }) {
         </Grid>
 
         {/* Plan Strength */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <GlassCard sx={{ textAlign: 'center', py: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <GlassCard sx={{ textAlign: 'center', py: 3, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <Box
               sx={{
                 width: 56,

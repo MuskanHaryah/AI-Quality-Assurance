@@ -28,14 +28,13 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { GlassCard, SectionHeader } from '../components/common/GlassCard';
 import Loading from '../components/common/Loading';
 import ErrorDisplay from '../components/common/ErrorDisplay';
-import { getRecentAnalyses, checkHealth } from '../api/services';
+import { getRecentAnalyses } from '../api/services';
 import { formatRelative } from '../utils/helpers';
 import { PURPLE, TEAL } from '../theme/theme';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [analyses, setAnalyses] = useState([]);
-  const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
@@ -45,12 +44,8 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [analysesResp, healthResp] = await Promise.all([
-        getRecentAnalyses(),
-        checkHealth(),
-      ]);
+      const analysesResp = await getRecentAnalyses();
       setAnalyses(analysesResp.analyses ?? []);
-      setHealth(healthResp);
     } catch (err) {
       let msg = err.friendlyMessage || 'Failed to load dashboard data.';
       if (err.code === 'ECONNREFUSED' || err.code === 'ERR_NETWORK' || msg.includes('Network Error')) {
@@ -148,31 +143,6 @@ export default function Dashboard() {
             </Grid>
           ))}
         </Grid>
-
-        {/* Backend status */}
-        {health && (
-          <GlassCard sx={{ mb: 4 }}>
-            <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap">
-              <Chip
-                label={`Backend: ${health.status}`}
-                color="success"
-                variant="outlined"
-                size="small"
-              />
-              <Chip
-                label={`Model: ${health.model}`}
-                variant="outlined"
-                size="small"
-              />
-              <Chip
-                label={`Accuracy: ${(health.accuracy * 100).toFixed(1)}%`}
-                variant="outlined"
-                size="small"
-                color="success"
-              />
-            </Stack>
-          </GlassCard>
-        )}
 
         {/* Recent analyses table */}
         <GlassCard>

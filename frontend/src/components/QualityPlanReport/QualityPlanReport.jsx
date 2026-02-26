@@ -9,6 +9,7 @@ import {
   Tooltip,
   Collapse,
   IconButton,
+  Button,
   alpha,
   Alert,
 } from '@mui/material';
@@ -74,13 +75,11 @@ export default function QualityPlanReport({ planData }) {
         >
           <Typography variant="subtitle2" fontWeight={600} gutterBottom>
             Wrong Document Type Detected
-            {document_type_warning.method === 'gemini' && (
-              <Chip 
-                label="AI" 
-                size="small" 
-                sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} 
-              />
-            )}
+            <Chip 
+              label="AI" 
+              size="small" 
+              sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} 
+            />
           </Typography>
           <Typography variant="body2" sx={{ mb: 1 }}>
             This document appears to be a <strong>{document_type_warning.detected_type}</strong> rather than a Quality Plan.
@@ -218,6 +217,7 @@ export default function QualityPlanReport({ planData }) {
 /** Single category coverage row with expandable evidence */
 function CategoryCoverageRow({ category, data }) {
   const [expanded, setExpanded] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const color = categoryColors[category] || '#64748b';
   const covered = data?.covered;
   const evidenceCount = data?.evidence_count || 0;
@@ -292,27 +292,52 @@ function CategoryCoverageRow({ category, data }) {
 
       {/* Expandable evidence snippets */}
       <Collapse in={expanded}>
-        <Box sx={{ ml: 6, mt: 1, mb: 1 }}>
-          <Typography variant="caption" color="text.secondary" fontWeight={600}>
+        <Box sx={{ ml: 6, mt: 1.5, mb: 1 }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
             Evidence found in your Quality Plan:
           </Typography>
-          {snippets.map((snippet, idx) => (
-            <Typography
-              key={idx}
-              variant="caption"
-              display="block"
-              sx={{
-                ml: 1,
-                mt: 0.5,
-                color: 'text.secondary',
-                fontStyle: 'italic',
-                borderLeft: `2px solid ${alpha(color, 0.3)}`,
-                pl: 1,
-              }}
+          <Stack spacing={1}>
+            {(showAll ? snippets : snippets.slice(0, 3)).map((snippet, idx) => (
+              <Box
+                key={idx}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1.5,
+                  backgroundColor: alpha(color, 0.04),
+                  borderLeft: `3px solid ${alpha(color, 0.4)}`,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    lineHeight: 1.6,
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  &ldquo;{snippet.trim()}&rdquo;
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+          {snippets.length > 3 && !showAll && (
+            <Button
+              size="small"
+              onClick={() => setShowAll(true)}
+              sx={{ mt: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}
             >
-              {snippet}
-            </Typography>
-          ))}
+              View More ({snippets.length - 3} more)
+            </Button>
+          )}
+          {showAll && snippets.length > 3 && (
+            <Button
+              size="small"
+              onClick={() => setShowAll(false)}
+              sx={{ mt: 1.5, textTransform: 'none', fontWeight: 600, fontSize: '0.75rem' }}
+            >
+              Show Less
+            </Button>
+          )}
         </Box>
       </Collapse>
 

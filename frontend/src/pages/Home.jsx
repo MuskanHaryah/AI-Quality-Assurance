@@ -45,9 +45,9 @@ const features = [
   {
     icon: <LanguageIcon sx={{ fontSize: 36 }} />,
     title: 'AI Domain Detection',
-    description: 'Gemini AI identifies your system domain across 15+ domains (Banking, Healthcare, Zoo/Wildlife, E-commerce, etc.) with confidence score and reasoning.',
+    description: 'AI identifies your system domain across 15+ domains (Banking, Healthcare, Zoo/Wildlife, E-commerce, etc.) with confidence score and reasoning.',
     color: '#8b5cf6',
-    badge: 'Gemini AI',
+    badge: 'AI-Powered',
   },
   {
     icon: <SecurityIcon sx={{ fontSize: 36 }} />,
@@ -73,9 +73,9 @@ const features = [
   {
     icon: <VerifiedIcon sx={{ fontSize: 36 }} />,
     title: 'AI Recommendations',
-    description: 'Gemini AI generates actionable, domain-specific suggestions. Critical categories with too few requirements trigger high-priority alerts.',
+    description: 'AI generates actionable, domain-specific suggestions. Critical categories with too few requirements trigger high-priority alerts.',
     color: PINK,
-    badge: 'Gemini AI',
+    badge: 'AI-Powered',
   },
   {
     icon: <WarningAmberIcon sx={{ fontSize: 36 }} />,
@@ -163,14 +163,14 @@ export default function Home() {
           color="text.secondary"
           sx={{ maxWidth: 640, mx: 'auto', mb: 2, fontWeight: 400, lineHeight: 1.6 }}
         >
-          AI-powered SRS quality analysis and Quality Plan comparison — built on machine learning, ISO/IEC 9126, and Google Gemini
+          AI-powered SRS quality analysis and Quality Plan comparison — built on machine learning and ISO/IEC 9126
         </Typography>
 
         {/* AI badge row */}
         <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ mb: 4, gap: 1 }}>
           <Chip
             icon={<AutoAwesomeIcon sx={{ fontSize: '14px !important' }} />}
-            label="Gemini AI"
+            label="AI-Powered"
             size="small"
             sx={{ bgcolor: alpha('#8b5cf6', 0.12), color: '#8b5cf6', fontWeight: 600 }}
           />
@@ -311,7 +311,7 @@ export default function Home() {
                   </Box>
                   {feature.badge && (
                     <Chip
-                      icon={feature.badge.includes('Gemini') || feature.badge.includes('AI') ? <AutoAwesomeIcon sx={{ fontSize: '12px !important' }} /> : undefined}
+                      icon={feature.badge.includes('AI') ? <AutoAwesomeIcon sx={{ fontSize: '12px !important' }} /> : undefined}
                       label={feature.badge}
                       size="small"
                       sx={{

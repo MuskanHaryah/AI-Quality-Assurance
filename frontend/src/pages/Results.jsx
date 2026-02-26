@@ -132,13 +132,11 @@ export default function Results() {
           >
             <Typography variant="subtitle2" fontWeight={600} gutterBottom>
               Wrong Document Type Detected
-              {domain.document_type_warning.method === 'gemini' && (
-                <Chip 
-                  label="AI" 
-                  size="small" 
-                  sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} 
-                />
-              )}
+              <Chip 
+                label="AI" 
+                size="small" 
+                sx={{ ml: 1, height: 18, fontSize: '0.65rem', bgcolor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} 
+              />
             </Typography>
             <Typography variant="body2" sx={{ mb: 1 }}>
               This document appears to be a <strong>{domain.document_type_warning.detected_type}</strong> rather than an SRS (Software Requirements Specification).
@@ -162,20 +160,18 @@ export default function Results() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Detected Domain
                 </Typography>
-                {domain.method === 'gemini' && (
-                  <Chip
-                    icon={<AutoAwesomeIcon />}
-                    label="AI"
-                    size="small"
-                    sx={{
-                      height: 20,
-                      fontSize: '0.65rem',
-                      backgroundColor: alpha(PURPLE, 0.15),
-                      color: PURPLE,
-                      '& .MuiChip-icon': { fontSize: 12, color: PURPLE },
-                    }}
-                  />
-                )}
+                <Chip
+                  icon={<AutoAwesomeIcon />}
+                  label="AI"
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: '0.65rem',
+                    backgroundColor: alpha(PURPLE, 0.15),
+                    color: PURPLE,
+                    '& .MuiChip-icon': { fontSize: 12, color: PURPLE },
+                  }}
+                />
               </Stack>
               <Typography variant="h5" fontWeight={800} color="text.primary">
                 {domain.domain || 'General'}

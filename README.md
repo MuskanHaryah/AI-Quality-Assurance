@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎯 QualityMapAI
+#  QualityMapAI
 
 ### AI-Powered Software Quality Assurance Analyzer
 
@@ -98,10 +98,4 @@ MIT License - Free for educational and commercial use
 
 ---
 
-<div align="center">
 
-**Built with ❤️ by Muskan Haryah and Team**
-
-⭐ Star this repo if it helps your project!
-
-</div>

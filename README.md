@@ -1,278 +1,107 @@
-# QualityMapAI
-## AI-Driven Software Quality Assurance Analyzer
+<div align="center">
 
-**An intelligent system that evaluates software quality by analyzing project documents using artificial intelligence.**
+# 🎯 QualityMapAI
 
----
+### AI-Powered Software Quality Assurance Analyzer
 
-## 🎯 Project Overview
+*Intelligent requirement analysis and quality prediction using machine learning*
 
-QualityMapAI is a web-based system that:
-- Analyzes Software Requirements Specification (SRS) documents
-- Extracts and classifies requirements using AI
-- Maps requirements to quality metrics (Performance, Security, Usability, etc.)
-- Verifies if test reports provide evidence for requirements
-- **Predicts expected quality before testing phase**
-- Generates comprehensive quality assessment reports
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-000000.svg)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
+[Features](#-features) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack) • [Demo](#-demo)
 
-## ✨ Key Features
-
-### 1. **Intelligent Requirement Classification**
-- AI-powered text classification using machine learning
-- Categorizes requirements into 7 quality attributes
-- 80%+ accuracy with confidence scores
-
-### 2. **Evidence-Based Quality Assessment**
-- Matches requirements with test evidence
-- Identifies gaps and missing verifications
-- Calculates weighted quality scores
-
-### 3. **Early Quality Prediction** ⭐
-- Predicts final quality before testing begins
-- Analyzes requirement clarity and coverage
-- Provides risk warnings and recommendations
-
-### 4. **Visual Dashboard**
-- Interactive charts and gauges
-- Category-wise breakdown
-- Gap analysis with prioritization
-
-### 5. **Automated Reports**
-- PDF/HTML export
-- Executive summaries
-- Actionable recommendations
+</div>
 
 ---
+
+## 🚀 What is QualityMapAI?
+
+QualityMapAI automatically analyzes Software Requirements Specifications (SRS) and predicts quality metrics using AI. Upload your documents, get instant insights on requirement coverage, quality gaps, and risk assessments—**before testing even begins**.
+
+## ✨ Features
+
+🤖 **AI-Powered Classification** - Automatically categorizes requirements into 7 quality attributes (ISO/IEC 9126)  
+📊 **Quality Prediction** - Predict project quality before development with 80%+ accuracy  
+🔍 **Gap Analysis** - Identify missing test coverage and requirement gaps instantly  
+📈 **Interactive Dashboard** - Beautiful charts, gauges, and real-time analytics  
+📄 **Smart Reports** - Generate professional PDF/HTML reports with actionable insights  
+⚡ **Fast & Lightweight** - No GPU required, runs on standard laptops  
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **React 18+** - Modern UI library
-- **Material-UI (MUI)** - Professional components
-- **Recharts** - Data visualization
-- **Axios** - API communication
+**Frontend:** React 18 • Material-UI • Recharts • Vite  
+**Backend:** Flask • scikit-learn • NLTK • SQLite  
+**ML Model:** Logistic Regression with TF-IDF vectorization  
 
-### Backend
-- **Flask** - Lightweight Python web framework
-- **scikit-learn** - Machine learning
-- **NLTK** - Natural language processing
-- **pdfplumber** - PDF text extraction
+## 📦 Quick Start
 
-### Database
-- **SQLite** - Lightweight database for analysis history
+### Prerequisites
+- Python 3.8+ and Node.js 16+
 
----
+### Installation
 
-## 📋 System Requirements
-
-### Software
-- Python 3.8+
-- Node.js 16+
-- npm or yarn
-
-### Hardware
-- 4GB RAM minimum
-- 1GB free disk space
-- Standard laptop (no GPU needed)
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone Repository
 ```bash
+# Clone repository
 git clone https://github.com/yourusername/QualityMapAI.git
 cd QualityMapAI
-```
 
-### 2. Setup Backend
-```bash
+# Backend setup
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 python app.py
-```
 
-### 3. Setup Frontend
-```bash
+# Frontend setup (new terminal)
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
-### 4. Access Application
-Open browser: `http://localhost:3000`
+Visit **http://localhost:3000** 🎉
 
----
+## 📸 Demo
+
+```
+📂 Upload SRS Document → 🤖 AI Analysis → 📊 Quality Score: 78.5%
+
+✅ 85% Functional Requirements Met
+⚠️  45% Security Coverage (Action Needed!)
+✅ 90% Usability Score
+```
+
+## 🎯 Use Cases
+
+- **QA Teams**: Verify requirement coverage and test completeness
+- **Project Managers**: Early quality prediction for better planning
+- **Developers**: Identify quality gaps before coding starts
 
 ## 📁 Project Structure
 
 ```
-AI-Quality-Assurance/
-│
-├── backend/
-│   ├── app.py                    # Flask entry point
-│   ├── routes/                   # API endpoints
-│   ├── services/                 # Business logic
-│   ├── models/                   # ML models (.pkl files)
-│   ├── utils/                    # Helper functions
-│   └── requirements.txt          # Python dependencies
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/           # React components
-│   │   ├── services/             # API calls
-│   │   └── App.jsx               # Main app
-│   ├── package.json
-│   └── public/
-│
-├── dataset/
-│   └── requirements.csv          # Training data
-│
-├── docs/
-│   ├── PROJECT_SPECIFICATION.md  # Complete specs
-│   ├── API_DOCUMENTATION.md      # API reference
-│   └── USER_GUIDE.md             # How to use
-│
+├── backend/          # Flask API + ML models
+├── frontend/         # React dashboard
+├── ml-training/      # Model training scripts
 └── README.md
 ```
 
----
-
-## 📖 Documentation
-
-- [Complete Project Specification](./PROJECT_SPECIFICATION.md) - Full technical details
-- [API Documentation](./docs/API_DOCUMENTATION.md) - Endpoint reference
-- [User Guide](./docs/USER_GUIDE.md) - How to use the system
-- [Training Guide](./docs/TRAINING_GUIDE.md) - Train your own model
-
----
-
-## 🎓 Academic Context
-
-**Project Type:** Semester Project  
-**Domain:** Software Engineering + Artificial Intelligence  
-**Difficulty:** Medium  
-**Team Size:** 2-4 students  
-**Duration:** 12-14 weeks  
-
----
-
-## 🔬 AI/ML Details
-
-### Model Type
-- **Algorithm:** Logistic Regression (primary)
-- **Feature Engineering:** TF-IDF vectorization
-- **Training Data:** 500-1000 labeled requirements
-- **Accuracy Target:** 80%+
-
-### Quality Attributes Classified (ISO/IEC 9126)
-1. Functionality
-2. Security (elevated from sub-characteristic)
-3. Reliability
-4. Usability
-5. Efficiency
-6. Maintainability
-7. Portability
-
----
-
-## 📊 Sample Output
-
-```
-QUALITY ASSESSMENT REPORT
-=========================
-
-Overall Quality Score: 78.5%
-
-Category Breakdown:
-  Functional:      85% ████████▌
-  Performance:     60% ██████
-  Security:        45% ████▌
-  Usability:       90% █████████
-  Reliability:     75% ███████▌
-  Maintainability: 80% ████████
-
-Gaps Identified: 11
-  - 5 Security requirements not verified
-  - 3 Performance tests missing
-  - 3 Reliability requirements incomplete
-
-Risk Level: MEDIUM
-
-Recommendations:
-  1. Add security testing (authentication, encryption)
-  2. Define performance benchmarks
-  3. Include error handling tests
-```
-
----
-
-## 🎯 Use Cases
-
-### Use Case 1: Quality Assurance Team
-Upload SRS and test reports to verify if all requirements are tested.
-
-### Use Case 2: Project Manager
-Predict quality early in project lifecycle to plan resources.
-
-### Use Case 3: Development Team
-Identify missing quality attributes before development starts.
-
----
-
-## 🔮 Future Enhancements
-
-- [ ] Support for more document formats (Excel, JSON)
-- [ ] Integration with JIRA/GitHub for automatic report generation
-- [ ] Deep learning models for better accuracy
-- [ ] Multi-language support (non-English requirements)
-- [ ] Real-time collaboration features
-- [ ] Historical trend analysis
-
----
-
 ## 🤝 Contributing
 
-This is an academic project. Contributions for educational purposes are welcome!
-
----
+Contributions welcome! This is an academic project open for educational improvements.
 
 ## 📄 License
 
-MIT License - Free for educational use
+MIT License - Free for educational and commercial use
 
 ---
 
-## 👥 Team
+<div align="center">
 
-**Project by:** Muskan Haryah and Team  
-**Institution:** [Your University Name]  
-**Semester:** [Current Semester]  
-**Year:** 2026  
+**Built with ❤️ by Muskan Haryah and Team**
 
----
+⭐ Star this repo if it helps your project!
 
-## 📞 Contact
-
-For questions or collaboration:
-- Email: [your.email@example.com]
-- GitHub: [@MuskanHaryah](https://github.com/MuskanHaryah)
-
----
-
-## 🙏 Acknowledgments
-
-- scikit-learn community for ML tools
-- React and Flask communities
-- Open-source SRS datasets
-- Academic supervisor: [Professor Name]
-
----
-
-**⭐ Star this repo if it helps your project!**
-
-**📖 Read [PROJECT_SPECIFICATION.md](./PROJECT_SPECIFICATION.md) for complete technical details.**
+</div>
